@@ -2,6 +2,9 @@
   "id": "listicle",
   "fits": "tips / roundup content",
   "hook_rules": "Promise the number and the payoff in the first line ('3 things that…'). Make item 1 the strongest so the viewer stays for the rest.",
+  "hook_formula": "listicle_tease",
+  "connector_rule": "Within items 'and then' is acceptable for the list itself, BUT each item's why-line still needs a BUT or THEREFORE. Open a loop before item 1 ('the last one surprised me').",
+  "last_dab": "End on which item to start with today, phrased as a line worth repeating — not 'follow for more'.",
   "cta_beat": "cta",
   "beats": [
     { "id": "hook", "purpose": "promise the list and why it matters, name the count", "weight": 0.8, "caption_hint": "the count + payoff" },

@@ -62,6 +62,21 @@ def test_missing_script_is_warning_not_error(tmp_path):
     assert any("no script" in w for w in p.warnings)
 
 
+def test_clean_script_strips_leading_comment_lines():
+    from pipeline.cli import _clean_script
+    raw = "# motivation: emotion\n\nYou think you're tired.\nWrong.\n"
+    assert _clean_script(raw) == "You think you're tired.\nWrong.\n"
+    # no comment line -> unchanged content
+    assert _clean_script("Hello there.\nGo.\n") == "Hello there.\nGo.\n"
+
+
+def test_narrative_templates_carry_scriptcraft_fields():
+    for tid in ("myth_bust", "problem_mechanism_payoff", "before_after", "listicle"):
+        nt = config.util.read_json(config.util.REPO_ROOT / "narrative_templates" / f"{tid}.json")
+        config.validate(nt, "narrative_template", where=tid)
+        assert "connector_rule" in nt and "hook_formula" in nt
+
+
 def test_unknown_style_pack_errors(tmp_path):
     bad = json.loads(json.dumps(BASE))
     bad["style_pack"] = "does_not_exist"

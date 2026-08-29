@@ -2,6 +2,9 @@
   "id": "myth_bust",
   "fits": "playful / consumer use cases",
   "hook_rules": "Lead with the myth stated as if you believe it, then hard-cut on 'wrong'. The contradiction is the hook. First 1.5s must contain the false belief the viewer already holds.",
+  "hook_formula": "contrarian",
+  "connector_rule": "BUT / THEREFORE between every beat — never 'and then'. belief BUT wrong; wrong THEREFORE here's the real answer.",
+  "last_dab": "End on the reframed truth as a one-liner someone would repeat — it should loop straight back into the stated myth on replay.",
   "cta_beat": "recap",
   "beats": [
     { "id": "belief", "purpose": "state the common belief out loud, confidently, as bait", "weight": 0.8, "caption_hint": "the myth, verbatim" },

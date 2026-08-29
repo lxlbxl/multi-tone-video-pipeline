@@ -3,7 +3,28 @@
 This pipeline makes *stills that move*, not generated video. That is a
 constraint and an advantage: the frame is always on-model, the text is always
 legible, and you can iterate a hook in minutes. What it does **not** do for you
-is earn attention — that is the script and the shot list. This doc is the bar.
+is earn attention — that is the script and the shot list. This doc is the bar
+for the *visual/edit* side; the *script* side is
+[scriptcraft.md](scriptcraft.md) (hook formulas, the BUT/THEREFORE dance,
+write-the-end-first, rhythm, tone).
+
+## Why anyone shares (name the target motivation in the brief)
+
+High reach = **strong hook × valuable substance × easy shareability** — all
+three. Every video should be built to trigger one or two of these:
+
+| Motivation | Trigger it by | Typical fit |
+|---|---|---|
+| **Identity** | make the viewer look smart/principled for sharing | playful/consumer |
+| **Utility** | one actionable thing with an immediate result | explainer, B2B |
+| **Emotion** | surprise, delight, righteous anger, nostalgia | consumer, story |
+| **Tribe** | speak to one tight community, specifically | niche B2B, community |
+| **Status** | contrarian take, insider info, "ahead of the curve" | thought-leadership |
+| **Validation** | say what the viewer believes but couldn't articulate | opinion, finance |
+
+Serious/finance usually plays **Utility + Validation**; playful/consumer usually
+**Emotion + Identity**. If you can't name why someone would send it to a
+friend, the video isn't done.
 
 ## The first 1.5 seconds decide everything
 

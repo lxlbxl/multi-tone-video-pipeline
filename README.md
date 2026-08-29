@@ -48,7 +48,7 @@ schemas/                     JSON Schema for every config type
 style_packs/                 stick_figure_v1, mascot_animal_v1, flat_corporate_v1
 tone_profiles/               serious_finance, playful_consumer, authoritative_b2b
 narrative_templates/         problem_mechanism_payoff, myth_bust, before_after, listicle
-references/                  config authoring · prompt templates · viral playbook · motion & captions · troubleshooting
+references/                  scriptcraft · config authoring · prompt templates · viral playbook · motion & captions · troubleshooting
 projects/
   example_playful_app/       worked example B (myth-bust, 3 chars, high motion)
   example_finance/           worked example A (explainer, 2 chars, disclaimer)
@@ -102,6 +102,14 @@ then you re-run. See [SKILL.md](SKILL.md) for the full workflow.
 ```bash
 python -m pytest        # 42 tests; Kie is stubbed, ffmpeg is real (~3 min)
 ```
+
+## Credits
+
+`references/scriptcraft.md` synthesises two open Claude-skill packs, adapted to
+this pipeline's format:
+
+- storytelling — [artemnovitckii/content-skills](https://github.com/artemnovitckii/content-skills)
+- viral-content-framework — [mohitagw15856/pm-claude-skills](https://github.com/mohitagw15856/pm-claude-skills)
 
 ## License
 

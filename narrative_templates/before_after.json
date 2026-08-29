@@ -2,6 +2,9 @@
   "id": "before_after",
   "fits": "transformation-style offers (wellness, services, tools)",
   "hook_rules": "Open inside the 'before' at its worst moment — the frustration, not the backstory. The viewer should recognise their own current state in the first 2 seconds.",
+  "hook_formula": "story",
+  "connector_rule": "BUT / THEREFORE between every beat — never 'and then'. before THEREFORE the turn; the turn BUT it wasn't obvious it would work.",
+  "last_dab": "End on the after-state as one concrete image plus how to get it, phrased to loop back into the before.",
   "cta_beat": "result",
   "beats": [
     { "id": "before", "purpose": "the starting state at its most painful and specific", "weight": 1.3, "caption_hint": "the frustration" },

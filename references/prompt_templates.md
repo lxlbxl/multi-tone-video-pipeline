@@ -4,6 +4,9 @@ Two steps need judgement, not code: writing the script and filling the shot
 list. The CLI stops at each so a human or Claude can do them. These are the
 prompts.
 
+The script pass is where the video is won or lost — read
+[scriptcraft.md](scriptcraft.md) first; this section just operationalises it.
+
 ---
 
 ## 1. Script draft
@@ -14,28 +17,57 @@ The CLI writes `<name>_PROMPT.txt` pre-filled with the specifics. Its shape:
 You are writing the spoken voice-over for a <target_seconds>s vertical video.
 Brief: <brief>
 Voice / tone: <tone.voice_style>
-Length: ~<N> words at <pacing_wpm> wpm.
-Narrative template: <template.id>
-Hook rule: <template.hook_rules>
+Length: EXACTLY ~<N> words (<pacing_wpm> wpm x <target_seconds>s). Running long
+        is the #1 failure — cut beats, never the lens or the last line.
+Narrative template: <template.id>   ·   Hook rule: <template.hook_rules>
+Connector rule: <template.connector_rule>
 
-Beats to cover, in order:
+Beats to cover, in order (put a BUT or THEREFORE between each — never "and then"):
   1. <beat.id>: <beat.purpose>
   2. ...
 
-Rules:
-- The FIRST SENTENCE is the hook. No "in this video", no "today I want to
-  talk about", no greeting. Land the stakes / the myth / the before-state
-  immediately.
+Method (from scriptcraft.md — do these in order):
+1. LENS. Before writing, pick the ONE non-obvious angle on this brief. Not
+   "struggled then succeeded". Invert the villain / find the asset in the
+   failure / jump to the second-order effect. State the lens in one line.
+2. ENDS FIRST. Write the last line — the "last dab": so sharp that hearing only
+   that line makes someone share it, and it loops back into the hook on replay.
+   Then write a working first line.
+3. DANCE. Fill the beats. Between every beat the connector is BUT or THEREFORE.
+   If "and then" fits, the beat is boring — cut it. >= 2 open loops in the
+   first 30s.
+4. RHYTHM. One sentence per line. Vary lengths — short, short, long. The left
+   edge must look jagged. Read it aloud.
+5. TONE. Rewrite anything that sounds like a speech into something you'd say to
+   one friend. Match <tone.voice_style>.
+6. HOOK. Finalise line 1 with a formula from scriptcraft.md §7 (match the
+   template): contrarian / specific-number / uncomfortable-truth / listicle-
+   tease / story / pattern-interrupt-question. Punchy, plot-indicative. No
+   "in this video", no greeting, no "wait till you see this".
+7. LENGTH. Trim to the word count above.
+
+Hard rules:
+- Real material only. Never invent numbers, events, or biography.
+  <if disclaimers_required: every claim must be defensible.>
 - Spoken words only — no stage directions, no scene labels, no emojis.
-- One idea per sentence. Short sentences. Contractions.
-- Read it aloud; if you stumble, rewrite it.
 - Land on ONE takeaway / CTA: "<cta>"
 - <disclaimer instruction, if the tone requires one>
+- Name the shareability motivation you're aiming for (identity / utility /
+  emotion / tribe / status / validation) on its own comment line at the top,
+  prefixed with "# ", then the script below it.
 
-Output: just the script text, nothing else.
+Output: the "# motivation:" line, then the script text. Nothing else.
 ```
 
-Save the result at the path the prompt names, then re-run the pipeline.
+Save the result at the path the prompt names (drop the `# motivation:` line or
+leave it — the pipeline strips leading `#` comment lines), then re-run.
+
+### Audit an existing script
+
+Run the checklist at the bottom of [scriptcraft.md](scriptcraft.md). Flag each
+offending line specifically: every "and then" / detail-pile beat, a trailing
+"follow for more" ending, the obvious lens, a flat rhythm stretch, any line
+that performs instead of talks.
 
 ---
 

@@ -25,6 +25,20 @@
       }
     },
     "hook_rules": { "type": "string" },
+    "hook_formula": {
+      "type": "string",
+      "description": "default hook formula from scriptcraft.md §7",
+      "enum": ["contrarian", "specific_number", "uncomfortable_truth",
+               "listicle_tease", "story", "pattern_interrupt_question"]
+    },
+    "connector_rule": {
+      "type": "string",
+      "description": "how beats join — normally the BUT/THEREFORE rule"
+    },
+    "last_dab": {
+      "type": "string",
+      "description": "guidance for the shareable final line that loops into the hook"
+    },
     "cta_beat": { "type": "string" }
   }
 }

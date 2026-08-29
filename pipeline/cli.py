@@ -96,7 +96,7 @@ def run(args: argparse.Namespace) -> int:
             util.die(f"No script yet. A drafting prompt was written next to "
                      f"{script_path.name}. Draft the script, save it as "
                      f"{script_path}, then re-run.", code=2)
-    script_text = util.read_text(script_path) if script_path.exists() else ""
+    script_text = _clean_script(util.read_text(script_path)) if script_path.exists() else ""
 
     if args.dry_run:
         est = _estimate(proj, _load_sl(art["shotlist"]))
@@ -185,27 +185,65 @@ def _load_sl(path: Path):
     return util.read_json(path) if Path(path).exists() else None
 
 
+def _clean_script(raw: str) -> str:
+    """Drop leading '#' comment lines (e.g. the '# motivation:' line the draft
+    prompt asks for) and surrounding blank lines; keep the spoken text."""
+    lines = raw.splitlines()
+    while lines and (not lines[0].strip() or lines[0].lstrip().startswith("#")):
+        lines.pop(0)
+    return "\n".join(lines).strip() + "\n"
+
+
 def _write_script_prompt(proj: "config.Project", tone: Tone, script_path: Path) -> None:
+    nt = proj.narrative_template
+    n_words = int(proj.target_seconds / 60 * tone.pacing_wpm)
     beats = "\n".join(f"  {i+1}. {b['id']}: {b['purpose']}"
-                      for i, b in enumerate(proj.narrative_template["beats"]))
-    txt = f"""SCRIPT DRAFTING PROMPT — {proj.name}
-Save the finished script (spoken words only, no stage directions) as:
-  {script_path.name}
+                      for i, b in enumerate(nt["beats"]))
+    disc = ("Every claim must be defensible; include a spoken disclaimer or leave "
+            "room for the end-card." if tone.disclaimers_required
+            else "No disclaimer needed.")
+    txt = f"""SCRIPT DRAFTING PROMPT - {proj.name}
+Save the finished script as:  {script_path.name}
+(See references/scriptcraft.md for the full method this prompt operationalises.)
 
-Brief: {proj.brief or '(none given)'}
-Voice / tone: {tone.voice_style}
-Target length: ~{proj.target_seconds:.0f}s  (~{int(proj.target_seconds/60*tone.pacing_wpm)} words at {tone.pacing_wpm} wpm)
-Narrative template: {proj.narrative_template['id']}
-Hook rule: {proj.narrative_template.get('hook_rules', '')}
+Brief:            {proj.brief or '(none given)'}
+Voice / tone:     {tone.voice_style}
+Length:           EXACTLY ~{n_words} words  ({tone.pacing_wpm} wpm x {proj.target_seconds:.0f}s).
+                  Running long is the #1 failure. Cut beats, never the lens or the last line.
+Narrative:        {nt['id']}
+Hook rule:        {nt.get('hook_rules', '')}
+Hook formula:     {nt.get('hook_formula', 'pattern_interrupt_question')} (scriptcraft.md section 7)
+Connector rule:   {nt.get('connector_rule', "BUT / THEREFORE between every beat - never 'and then'.")}
+Last line:        {nt.get('last_dab', 'A shareable one-liner that loops back into the hook on replay.')}
 
-Beats to cover, in order:
+Beats, in order (put a BUT or THEREFORE between each):
 {beats}
 
-Rules:
-- First sentence must land the hook — no "in this video", no throat-clearing.
-- Spoken-word only. Short sentences. One idea per sentence.
-- {"Include a spoken disclaimer or leave room for the end-card." if tone.disclaimers_required else "No disclaimer needed."}
-- End on a single clear takeaway / CTA{': ' + proj.cta if proj.cta else '.'}
+Method (do in order):
+ 1. LENS - pick the ONE non-obvious angle on this brief before writing. Not
+    "struggled then succeeded". Invert the villain / find the asset in the
+    failure / jump to the second-order effect.
+ 2. ENDS FIRST - write the last line (the "last dab") and a working first line;
+    leave the middle blank.
+ 3. DANCE - fill the beats; BUT/THEREFORE between each; kill every "and then";
+    >= 2 open loops in the first 30s.
+ 4. RHYTHM - one sentence per line; vary lengths (short, short, long); jagged
+    left edge; read aloud.
+ 5. TONE - rewrite anything that sounds like a speech into something said to one
+    friend; match the voice/tone above.
+ 6. HOOK - finalise line 1 with the hook formula; punchy, plot-indicative; no
+    "in this video", no greeting, no "wait till you see this".
+ 7. LENGTH - trim to ~{n_words} words.
+
+Hard rules:
+- Real material only. Never invent numbers, events, or biography.
+- {disc}
+- Spoken words only - no stage directions, scene labels, or emojis.
+- End on ONE takeaway / CTA{': ' + proj.cta if proj.cta else '.'}
+- First line of the file: "# motivation: <identity|utility|emotion|tribe|status|
+  validation>" - the target reason someone would share this. Script below it.
+
+Output: the "# motivation:" line, then the script. Nothing else.
 """
     p = script_path.with_name(script_path.stem + "_PROMPT.txt")
     p.parent.mkdir(parents=True, exist_ok=True)

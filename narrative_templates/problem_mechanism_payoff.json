@@ -2,6 +2,9 @@
   "id": "problem_mechanism_payoff",
   "fits": "serious / explainer use cases (finance, B2B, healthcare)",
   "hook_rules": "Open on the cost of the problem, stated plainly in the first sentence. No throat-clearing, no 'in this video'. The viewer should feel the stakes within 2 seconds.",
+  "hook_formula": "specific_number",
+  "connector_rule": "BUT / THEREFORE between every beat — never 'and then'. The mechanism beat especially: each step THEREFORE the next.",
+  "last_dab": "End on the single defensible action, phrased so it loops back to the cost in the hook. Not 'follow for more'.",
   "cta_beat": "takeaway",
   "beats": [
     { "id": "hook", "purpose": "name the expensive problem in one concrete sentence", "weight": 1.0, "caption_hint": "the number or the stakes" },

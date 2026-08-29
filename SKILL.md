@@ -76,13 +76,15 @@ Run `python -m pipeline --project … --dry-run` — it prints the resolved conf
 the stage list, and a Kie credit estimate. Fix any config error it reports
 before spending credits.
 
-### 2. Draft the script (checkpoint)
+### 2. Draft the script (checkpoint) — this is where the video is won
 If `project.json` has no `script`, the CLI writes `<name>_PROMPT.txt` with the
-tone's voice, the target word count, and the narrative template's beats. Write
-the script (spoken words only), save it where the prompt says, re-run.
-Hook rules per template are in `narrative_templates/*.json` and
-[references/viral_playbook.md](references/viral_playbook.md) — **the first
-sentence is the whole ballgame.**
+tone's voice, the exact target word count, the template's beats, its hook
+formula, and the BUT/THEREFORE connector rule. **Read
+[references/scriptcraft.md](references/scriptcraft.md) before writing** — pick
+the lens first, write the last line first, put a BUT or THEREFORE between every
+beat (never "and then"), vary the rhythm, talk to one friend, and open with a
+real hook formula. Save the script where the prompt says, re-run. Audit an
+existing draft against scriptcraft.md's checklist.
 
 ### 3. TTS + alignment (automatic)
 `tts` synthesizes the VO with the tone's voice/pacing. `align` produces word
@@ -137,9 +139,10 @@ requires one. Output: `projects/<name>/output/<name>_final.mp4` + a manifest.
 
 ## Reference docs
 
+- [scriptcraft.md](references/scriptcraft.md) — **read before the script pass**: hook formulas, the BUT/THEREFORE dance, write-the-end-first, story lens, rhythm, tone, shareability, length budget, audit checklist
 - [config_authoring.md](references/config_authoring.md) — every schema field, how to add a style pack / tone / template
 - [prompt_templates.md](references/prompt_templates.md) — script-draft and shot-list prompts for the creative passes
-- [viral_playbook.md](references/viral_playbook.md) — hook, retention, caption pacing, sound-on, loopability
+- [viral_playbook.md](references/viral_playbook.md) — the visual/edit bar: hook frame, retention, sharing motivations, sound-on, loopability
 - [motion_and_captions.md](references/motion_and_captions.md) — how motion_intensity maps to FFmpeg, ASS caption styling
 - [troubleshooting.md](references/troubleshooting.md) — kie-cli drift, upload failures, ffmpeg concat, alignment
 
