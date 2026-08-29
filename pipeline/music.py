@@ -1,13 +1,20 @@
 """
 music.py — optional background music bed (viral factor: sound-on design).
 
-Uses `kie-cli suno_generate_music` when the tone profile enables music, then
-sidechain-ducks it under the voice-over and normalises the mix for social
+Backend, picked automatically:
+  * ElevenLabs `/v1/music` when ELEVENLABS_API_KEY is set (and
+    MTVP_MUSIC_VIA_KIE is not) — on the user's existing plan, no Kie credits.
+  * `kie-cli suno_generate_music` otherwise.
+
+The bed is sidechain-ducked under the VO and the mix normalised for social
 (-14 LUFS). If generation is disabled or fails, the pipeline continues with the
 dry voice-over — music is never load-bearing.
 """
 from __future__ import annotations
 
+import json
+import os
+import urllib.request
 from pathlib import Path
 
 from . import kie, util
@@ -22,15 +29,32 @@ def _has_audio(path: str | Path) -> bool:
         return False
 
 
+def _eleven_music(prompt: str, duration: float, dest: Path) -> bool:
+    key = os.environ["ELEVENLABS_API_KEY"]
+    ms = int(max(10.0, min(duration, 300.0)) * 1000)
+    body = json.dumps({"prompt": prompt[:2000], "music_length_ms": ms}).encode()
+    req = urllib.request.Request("https://api.elevenlabs.io/v1/music", data=body,
+                                 headers={"xi-api-key": key, "Content-Type": "application/json"})
+    util.log(f"music: ElevenLabs /v1/music ({ms/1000:.0f}s)")
+    dest.write_bytes(urllib.request.urlopen(req, timeout=240).read())
+    return dest.stat().st_size > 2000
+
+
 def generate_bed(prompt: str, duration: float, *, dest: Path, work_dir: Path) -> Path | None:
     work_dir.mkdir(parents=True, exist_ok=True)
+    src = work_dir / "music_raw.mp3"
+    use_eleven = (os.environ.get("ELEVENLABS_API_KEY")
+                  and not util.env_flag("MTVP_MUSIC_VIA_KIE"))
     try:
-        src = work_dir / "music_raw.mp3"
-        # kie-cli suno_generate_music: customMode + instrumental are required;
-        # pass them as explicit "true"/"false" strings (yargs booleans).
-        kie.generate("suno_generate_music", dest=src, timeout=900,
-                     prompt=prompt[:490], model="V4_5",
-                     customMode="false", instrumental="true")
+        if use_eleven:
+            if not _eleven_music(prompt, duration + 2, src):
+                return None
+        else:
+            # kie-cli suno_generate_music: customMode + instrumental are required;
+            # pass them as explicit "true"/"false" strings (yargs booleans).
+            kie.generate("suno_generate_music", dest=src, timeout=900,
+                         prompt=prompt[:490], model="V4_5",
+                         customMode="false", instrumental="true")
     except Exception as e:  # noqa: BLE001
         util.log(f"music: generation skipped ({e})", level="warn")
         return None

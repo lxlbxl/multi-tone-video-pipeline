@@ -103,16 +103,35 @@ def submit(tool: str, **opts: Any) -> str:
     return tid
 
 
-def wait(task_id: str, *, timeout: int = 900) -> list[str]:
-    """Block until the task completes; return its result URLs."""
+def wait(task_id: str, *, timeout: int = 1200) -> list[str]:
+    """Block until the task completes; return its result URLs.
+
+    kie-cli's `wait_for_task` gives up after its own ~180s window and returns
+    ``status: timed_out`` while the task is still running — that is not a
+    failure, so keep re-calling it until the task actually resolves or our own
+    `timeout` budget is spent."""
+    import time as _t
     cmd = [CLI, "wait_for_task", "--json", "--task_id", task_id]
-    proc = util.run(cmd, timeout=timeout + 60)
-    data = json.loads(proc.stdout)
-    status = (data.get("status") or "").lower()
-    urls = data.get("result_urls") or data.get("resultUrls") or []
-    if status not in ("success", "completed") or not urls:
-        raise KieError(f"task {task_id} failed: {json.dumps(data)[:400]}")
-    return urls
+    deadline = _t.time() + timeout
+    last = {}
+    while _t.time() < deadline:
+        proc = util.run(cmd, timeout=300, check=False)
+        try:
+            data = json.loads(proc.stdout)
+        except json.JSONDecodeError:
+            _t.sleep(10)
+            continue
+        last = data
+        status = (data.get("status") or data.get("state") or "").lower()
+        urls = data.get("result_urls") or data.get("resultUrls") or []
+        if status in ("success", "completed") and urls:
+            return urls
+        if status in ("fail", "failed", "error"):
+            raise KieError(f"task {task_id} failed: {json.dumps(data)[:400]}")
+        # timed_out / running / queued / generating -> poll again
+        util.log(f"kie wait: {task_id} still {status or 'running'}…")
+        _t.sleep(5)
+    raise KieError(f"task {task_id} not done within {timeout}s: {json.dumps(last)[:300]}")
 
 
 _AUDIO_TOOLS = {"elevenlabs_tts", "elevenlabs_ttsfx", "suno_generate_music"}
