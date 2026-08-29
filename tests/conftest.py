@@ -12,6 +12,8 @@ sys.path.insert(0, str(ROOT))
 os.environ.setdefault("MTVP_FAKE_KIE", "1")
 os.environ.setdefault("MTVP_SKIP_UPLOAD", "1")
 os.environ.setdefault("MTVP_FAKE_MEDIA", str(ROOT / "tests" / "fixtures" / "ref.png"))
+# keep TTS on the stubbed kie path even if a real ELEVENLABS_API_KEY is in the env
+os.environ["MTVP_TTS_VIA_KIE"] = "1"
 
 
 @pytest.fixture
