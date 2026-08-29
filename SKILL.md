@@ -40,11 +40,14 @@ python -m pip install -r requirements.txt      # jsonschema, Pillow, pytest
 npm install -g kie-cli                          # GPT Image 2 + ElevenLabs TTS
 export KIE_API_KEY="..."                         # https://kie.ai/api-key
 ffmpeg -version                                  # 6+ with libass (bundled in gyan builds)
-python scripts/preflight.py                      # verify all of the above
+python scripts/preflight.py --ping               # verify all of the above
 ```
 
 Optional: `pip install faster-whisper` for tighter caption sync (the pipeline
 falls back to Gemini, then to proportional estimation, without it).
+
+Full per-OS setup, and how to install this as a Claude Code skill vs. run it
+standalone, is in [INSTALL.md](INSTALL.md).
 
 ## Pipeline stages
 

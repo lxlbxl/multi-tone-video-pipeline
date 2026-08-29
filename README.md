@@ -33,7 +33,7 @@ projects/consumer_promo_01/project.json
 ```
 
 Swap `stick_figure_v1` → `flat_corporate_v1` and `playful_consumer` →
-`serious_finance` and the same ten modules produce a completely
+`serious_finance` and the same modules produce a completely
 different-feeling video.
 
 ## Layout
@@ -54,23 +54,41 @@ projects/
   example_finance/           worked example A (explainer, 2 chars, disclaimer)
   smoke_test/                tiny end-to-end proof + a project-local tone override
 scripts/preflight.py         environment check
-tests/                       39 tests, Kie stubbed, real ffmpeg
+INSTALL.md                   full installation guide (skill + standalone)
+tests/                       42 tests, Kie stubbed, real ffmpeg
+```
+
+## Installation
+
+Full step-by-step (both as a Claude Code skill and as a standalone CLI, with
+per-OS notes) is in **[INSTALL.md](INSTALL.md)**. The short version:
+
+```bash
+# prerequisites: Python 3.10+, FFmpeg 6+ with libass, Node/npm
+git clone https://github.com/lxlbxl/multi-tone-video-pipeline.git
+cd multi-tone-video-pipeline
+python -m pip install -r requirements.txt
+npm install -g kie-cli
+export KIE_API_KEY="..."                      # https://kie.ai/api-key
+python scripts/preflight.py --ping             # every line should be [ OK ]
+```
+
+Install it as a Claude Code skill by cloning into your skills directory:
+
+```bash
+git clone https://github.com/lxlbxl/multi-tone-video-pipeline.git \
+  ~/.claude/skills/multi-tone-video-pipeline
 ```
 
 ## Quick start
 
 ```bash
-python -m pip install -r requirements.txt
-npm install -g kie-cli
-export KIE_API_KEY="..."                      # https://kie.ai/api-key
-python scripts/preflight.py --ping
-
 python -m pipeline --project projects/example_playful_app/project.json --dry-run
 python -m pipeline --project projects/example_playful_app/project.json
 ```
 
 `script` and `shotlist` are checkpoints — the CLI stops for the creative pass,
-then you re-run. See [SKILL.md](SKILL.md).
+then you re-run. See [SKILL.md](SKILL.md) for the full workflow.
 
 ## Requirements
 
@@ -82,7 +100,7 @@ then you re-run. See [SKILL.md](SKILL.md).
 ## Tests
 
 ```bash
-python -m pytest        # 39 tests; Kie is stubbed, ffmpeg is real (~3 min)
+python -m pytest        # 42 tests; Kie is stubbed, ffmpeg is real (~3 min)
 ```
 
 ## License
