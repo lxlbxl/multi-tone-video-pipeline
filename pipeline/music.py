@@ -26,9 +26,11 @@ def generate_bed(prompt: str, duration: float, *, dest: Path, work_dir: Path) ->
     work_dir.mkdir(parents=True, exist_ok=True)
     try:
         src = work_dir / "music_raw.mp3"
-        kie.generate("suno_generate_music", dest=src,
-                     timeout=600, prompt=prompt, instrumental=True,
-                     custom_mode=False)
+        # kie-cli suno_generate_music: customMode + instrumental are required;
+        # pass them as explicit "true"/"false" strings (yargs booleans).
+        kie.generate("suno_generate_music", dest=src, timeout=900,
+                     prompt=prompt[:490], model="V4_5",
+                     customMode="false", instrumental="true")
     except Exception as e:  # noqa: BLE001
         util.log(f"music: generation skipped ({e})", level="warn")
         return None
