@@ -1,0 +1,78 @@
+{
+  "_comment": "ILLUSTRATIVE ONLY — the CLI loads shot_list.json, not this file. serious_finance holds >= 6s per shot, captions <= 2 words/pop, motion is low, and disclaimers_required adds an end-card automatically at render.",
+  "project": "example_finance",
+  "audio_duration": 46.0,
+  "narrative_template": "problem_mechanism_payoff",
+  "shots": [
+    {
+      "shot_id": "s01", "beat": "hook", "start": 0.0, "end": 7.5,
+      "characters": ["client"], "background": "office_interior", "background_query": [],
+      "composition": "Medium shot, client sits at a desk looking at a car-repair invoice, brow furrowed, a calculator and coffee cup nearby.",
+      "motion": { "type": "ken_burns", "direction": "in" },
+      "captions": [
+        { "text": "One surprise" , "start": 0.4, "end": 1.6 },
+        { "text": "car repair" , "start": 1.6, "end": 2.9 },
+        { "text": "breaks it." , "start": 3.2, "end": 5.0, "emphasis": true }
+      ]
+    },
+    {
+      "shot_id": "s02", "beat": "problem", "start": 7.5, "end": 15.0,
+      "characters": ["advisor", "client"], "background": "office_interior", "background_query": [],
+      "composition": "Two-shot across the desk, advisor gestures toward a simple line chart on the tablet while client listens, wide calm framing.",
+      "motion": { "type": "ken_burns", "direction": "right" },
+      "captions": [
+        { "text": "The money" , "start": 8.0, "end": 9.0 },
+        { "text": "leaves investments" , "start": 9.0, "end": 10.6 },
+        { "text": "at a" , "start": 10.9, "end": 11.6 },
+        { "text": "bad time." , "start": 11.6, "end": 13.2, "emphasis": true }
+      ]
+    },
+    {
+      "shot_id": "s03", "beat": "mechanism", "start": 15.0, "end": 24.0,
+      "characters": ["advisor"], "background": "boardroom", "background_query": [],
+      "composition": "Medium shot, advisor stands beside a three-box diagram (Life, Buffer, Long-term money), hand resting near the middle box.",
+      "motion": { "type": "parallax", "direction": "in" },
+      "captions": [
+        { "text": "The buffer" , "start": 15.5, "end": 17.2 },
+        { "text": "sits between" , "start": 17.4, "end": 18.8 },
+        { "text": "your life" , "start": 18.8, "end": 20.0 },
+        { "text": "and your" , "start": 20.0, "end": 21.0 },
+        { "text": "investments." , "start": 21.0, "end": 23.0, "emphasis": true }
+      ]
+    },
+    {
+      "shot_id": "s04", "beat": "mechanism", "start": 24.0, "end": 31.5,
+      "characters": ["client"], "background": "office_interior", "background_query": [],
+      "composition": "Close shot, client's hands moving a labelled 'Savings' envelope aside from an 'Invested' folder, deliberate and calm.",
+      "motion": { "type": "hold", "direction": "in" },
+      "captions": [
+        { "text": "Three, six" , "start": 24.6, "end": 26.0 },
+        { "text": "months of" , "start": 26.0, "end": 27.2 },
+        { "text": "expenses." , "start": 27.2, "end": 29.2, "emphasis": true }
+      ]
+    },
+    {
+      "shot_id": "s05", "beat": "proof", "start": 31.5, "end": 39.0,
+      "characters": ["advisor"], "background": "boardroom", "background_query": [],
+      "composition": "Medium shot, advisor points to a rising long-run growth curve on the wall screen, the near-term dip barely visible.",
+      "motion": { "type": "ken_burns", "direction": "in" },
+      "captions": [
+        { "text": "Staying invested" , "start": 32.0, "end": 33.6 },
+        { "text": "through downturns" , "start": 33.6, "end": 35.2 },
+        { "text": "mattered more." , "start": 35.5, "end": 37.6, "emphasis": true }
+      ]
+    },
+    {
+      "shot_id": "s06", "beat": "takeaway", "start": 39.0, "end": 46.0,
+      "characters": ["advisor", "client"], "background": "office_interior", "background_query": [],
+      "composition": "Two-shot, advisor and client both looking at a phone showing a scheduled automatic transfer, a small confirmation tick on screen.",
+      "motion": { "type": "ken_burns", "direction": "out" },
+      "captions": [
+        { "text": "Buffer first." , "start": 39.5, "end": 41.0, "emphasis": true },
+        { "text": "Then invest," , "start": 41.3, "end": 42.8 },
+        { "text": "and leave" , "start": 42.8, "end": 43.8 },
+        { "text": "it alone." , "start": 43.8, "end": 45.4 }
+      ]
+    }
+  ]
+}

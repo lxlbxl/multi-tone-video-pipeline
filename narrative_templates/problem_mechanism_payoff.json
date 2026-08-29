@@ -1,0 +1,13 @@
+{
+  "id": "problem_mechanism_payoff",
+  "fits": "serious / explainer use cases (finance, B2B, healthcare)",
+  "hook_rules": "Open on the cost of the problem, stated plainly in the first sentence. No throat-clearing, no 'in this video'. The viewer should feel the stakes within 2 seconds.",
+  "cta_beat": "takeaway",
+  "beats": [
+    { "id": "hook", "purpose": "name the expensive problem in one concrete sentence", "weight": 1.0, "caption_hint": "the number or the stakes" },
+    { "id": "problem", "purpose": "make the pain specific and relatable — who it hits and how", "weight": 1.2 },
+    { "id": "mechanism", "purpose": "explain how the fix actually works, step by step, no jargon", "weight": 1.6 },
+    { "id": "proof", "purpose": "one credible number, result, or before/after that backs the mechanism", "weight": 1.0, "caption_hint": "the proof number" },
+    { "id": "takeaway", "purpose": "one clear next action and the single thing to remember", "weight": 0.8 }
+  ]
+}

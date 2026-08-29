@@ -1,0 +1,9 @@
+# Runtime
+jsonschema>=4.0
+Pillow>=10.0
+
+# Optional — tighter caption sync (align.py falls back without it)
+# faster-whisper>=1.0
+
+# Dev / tests
+pytest>=7.0

@@ -1,0 +1,24 @@
+{
+  "name": "smoke_test",
+  "brief": "Tiny end-to-end proof: one character, one background, ~10 seconds",
+  "style_pack": "stick_figure_v1",
+  "tone_profile": "playful_consumer",
+  "narrative_template": "myth_bust",
+  "seed": 1,
+  "aspect": "9:16",
+  "resolution": "1K",
+  "target_seconds": 11,
+  "script": "scripts/smoke_test.txt",
+  "cta": "Drink the water",
+  "characters": [
+    {
+      "name": "everyman",
+      "style_pack": "stick_figure_v1",
+      "role": "relatable everyman",
+      "description": "plain blue t-shirt, jeans, tired expression, holding a giant coffee cup"
+    }
+  ],
+  "backgrounds": [
+    { "name": "home_desk", "description": "simple home office desk with a laptop and a plant, plain wall behind", "tags": ["indoor", "home", "neutral"] }
+  ]
+}

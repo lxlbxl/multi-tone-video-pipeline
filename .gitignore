@@ -1,0 +1,28 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.DS_Store
+
+# Per-project generated media — configs and scripts are tracked, outputs are not
+projects/*/work/
+projects/*/output/
+projects/*/shots/*.png
+projects/*/shots/shot_list.json
+
+# but keep the hand-authored *.sample.json (illustrative, not loaded by the CLI)
+!projects/*/shots/*.sample.json
+
+# Generated reference/background images + their provenance sidecars.
+# To version a character bible for a real venture, force-add its files:
+#   git add -f characters/<style_pack>/<name>_ref.png characters/<style_pack>/<name>_ref.json
+characters/*/*
+backgrounds/*/*
+!characters/.gitkeep
+!backgrounds/.gitkeep
+
+# smoke-test artifacts
+projects/smoke_test/shots/
+projects/smoke_test/work/
+projects/smoke_test/output/

@@ -1,0 +1,39 @@
+{
+  "name": "example_playful_app",
+  "brief": "Playful consumer promo for a habit-tracking app — bust the myth that you need motivation, not a system",
+  "style_pack": "stick_figure_v1",
+  "tone_profile": "playful_consumer",
+  "narrative_template": "myth_bust",
+  "seed": 4412,
+  "aspect": "9:16",
+  "resolution": "1K",
+  "target_seconds": 30,
+  "script": "scripts/example_playful_app.txt",
+  "cta": "Search 'Streakly' and start your first streak today",
+  "characters": [
+    {
+      "name": "hoodie_guy",
+      "style_pack": "stick_figure_v1",
+      "role": "protagonist, relatable everyman who keeps failing at habits",
+      "description": "green hoodie, cap worn backwards, sneakers, slightly slouched posture",
+      "voice_tag": "casual_male_1"
+    },
+    {
+      "name": "coach_woman",
+      "style_pack": "stick_figure_v1",
+      "role": "the voice of reason, upbeat friend",
+      "description": "orange t-shirt, short curly hair, running shoes, energetic stance"
+    },
+    {
+      "name": "future_guy",
+      "style_pack": "stick_figure_v1",
+      "role": "hoodie_guy 90 days later, transformed",
+      "description": "same green hoodie but standing tall, confident, small gym bag on shoulder"
+    }
+  ],
+  "backgrounds": [
+    { "name": "city_sidewalk", "description": "generic downtown sidewalk, mid-rise buildings, midday", "tags": ["outdoor", "neutral", "urban"] },
+    { "name": "small_bedroom", "description": "cramped single bedroom, unmade bed, laundry pile, phone on nightstand", "tags": ["indoor", "messy", "home"] },
+    { "name": "coffee_shop", "description": "cozy independent coffee shop interior, warm light, small tables", "tags": ["indoor", "warm", "social"] }
+  ]
+}

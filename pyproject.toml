@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multi-tone-video-pipeline"
+version = "1.0.0"
+description = "Config-driven script-to-video pipeline: one engine, every style and tone, no video model"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = ["jsonschema>=4.0", "Pillow>=10.0"]
+
+[project.optional-dependencies]
+align = ["faster-whisper>=1.0"]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+mtvp = "pipeline.cli:main"
+
+[tool.setuptools]
+packages = ["pipeline"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

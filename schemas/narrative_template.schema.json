@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "narrative_template",
+  "type": "object",
+  "required": ["id", "beats"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "fits": { "type": "string" },
+    "beats": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["id", "purpose"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "purpose": { "type": "string", "minLength": 5 },
+          "weight": { "type": "number", "minimum": 0.1, "maximum": 5,
+                      "description": "relative share of total runtime" },
+          "repeatable": { "type": "boolean", "description": "beat may expand to N shots (listicle items)" },
+          "caption_hint": { "type": "string" }
+        }
+      }
+    },
+    "hook_rules": { "type": "string" },
+    "cta_beat": { "type": "string" }
+  }
+}

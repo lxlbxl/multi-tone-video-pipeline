@@ -1,0 +1,10 @@
+{
+  "id": "stick_figure_v1",
+  "render_prefix": "2D stick-figure illustration, warm beige off-white background, bold clean black outlines, minimal flat pastel coloring, comic educational aesthetic, expressive simple faces made of dots and lines, no 3D render, no realistic faces, no photographic textures",
+  "line_weight": "bold",
+  "palette": ["#F0EAE0", "#8FBFA3", "#2C3E50", "#E8A87C"],
+  "reference_pose": "single character, front three-quarter view, relaxed neutral standing pose, arms slightly away from body, full body in frame, plain flat background, even lighting",
+  "background_suffix": "empty environment with no characters, wide establishing framing, same bold black outlines and flat pastel fills, generous negative space in the lower third for captions",
+  "forbidden": ["copyrighted characters", "realistic faces", "photographic textures", "brand logos", "watermarks", "text labels in the image"],
+  "notes": "Cheap to render, reads instantly at thumbnail size, tone-flexible. Default pick for consumer/explainer shorts."
+}

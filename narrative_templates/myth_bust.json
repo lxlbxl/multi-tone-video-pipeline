@@ -1,0 +1,13 @@
+{
+  "id": "myth_bust",
+  "fits": "playful / consumer use cases",
+  "hook_rules": "Lead with the myth stated as if you believe it, then hard-cut on 'wrong'. The contradiction is the hook. First 1.5s must contain the false belief the viewer already holds.",
+  "cta_beat": "recap",
+  "beats": [
+    { "id": "belief", "purpose": "state the common belief out loud, confidently, as bait", "weight": 0.8, "caption_hint": "the myth, verbatim" },
+    { "id": "wrong", "purpose": "puncture it — one line, high energy, pattern interrupt", "weight": 0.7, "caption_hint": "\"WRONG\" / \"NOPE\"" },
+    { "id": "real_answer", "purpose": "the actual truth and the quick reason it's true", "weight": 1.6 },
+    { "id": "payoff", "purpose": "what the viewer gains by knowing this now", "weight": 1.0 },
+    { "id": "recap", "purpose": "snap recap + soft CTA in one breath", "weight": 0.6 }
+  ]
+}

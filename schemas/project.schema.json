@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "project",
+  "type": "object",
+  "required": ["name", "style_pack", "characters", "tone_profile"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "brief": { "type": "string", "description": "one-line description of the video" },
+    "style_pack": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "characters": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": ["string", "object"],
+        "description": "a name (string) referencing characters/<style_pack>/<name>.json, or an inline character object (validated against character.schema.json)"
+      }
+    },
+    "backgrounds": {
+      "type": "array",
+      "items": {
+        "type": ["string", "object"],
+        "description": "a name or an inline background object (validated against background.schema.json)"
+      }
+    },
+    "tone_profile": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "narrative_template": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "description": "override the tone profile's default template"
+    },
+    "script": { "type": "string", "description": "path (relative to project dir) to a script .txt; omit to have it drafted" },
+    "aspect": { "type": "string", "enum": ["9:16", "1:1", "16:9", "4:3", "3:4"] },
+    "resolution": { "type": "string", "enum": ["1K", "2K", "4K"] },
+    "seed": { "type": "integer" },
+    "target_seconds": { "type": "number", "minimum": 6, "maximum": 180 },
+    "disclaimer_text": { "type": "string", "description": "overrides the tone profile's disclaimer copy" },
+    "cta": { "type": "string" }
+  }
+}

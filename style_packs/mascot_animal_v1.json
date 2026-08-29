@@ -1,0 +1,10 @@
+{
+  "id": "mascot_animal_v1",
+  "render_prefix": "semi-realistic cartoon animal character wearing modern human clothing, painterly cel-shaded style, soft rim light, cinematic city or office backdrop, warm natural lighting, friendly approachable expression, consistent character proportions",
+  "line_weight": "soft",
+  "palette": ["#274472", "#F2E8CF", "#B85C38", "#6A994E"],
+  "reference_pose": "single mascot character, front three-quarter view, upright confident stance, full body in frame, neutral studio background, soft key light from camera left",
+  "background_suffix": "empty environment with no characters, painterly cel-shaded rendering, cinematic depth of field, lower third kept visually calm for captions",
+  "forbidden": ["copyrighted characters", "any existing studio mascot's proportions or markings", "realistic human faces", "brand logos", "watermarks", "in-image text"],
+  "notes": "Warmer and more premium than stick figures. Good for brand mascots and lifestyle-leaning stories."
+}

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "tone_profile",
+  "type": "object",
+  "required": ["id", "voice_style", "tts_voice_id", "pacing_wpm", "caption_style",
+               "narrative_template", "shot_hold_seconds_min", "motion_intensity",
+               "disclaimers_required"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "voice_style": { "type": "string", "minLength": 5 },
+    "tts_voice_id": { "type": "string" },
+    "tts_model": { "type": "string", "enum": ["turbo", "multilingual"] },
+    "tts_stability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "tts_style": { "type": "number", "minimum": 0, "maximum": 1 },
+    "pacing_wpm": { "type": "integer", "minimum": 90, "maximum": 240 },
+    "caption_style": {
+      "type": "object",
+      "required": ["font_weight", "max_words_per_pop", "color", "stroke"],
+      "additionalProperties": false,
+      "properties": {
+        "font_family": { "type": "string" },
+        "font_weight": { "type": "string", "enum": ["regular", "medium", "semibold", "bold", "extrabold", "black"] },
+        "max_words_per_pop": { "type": "integer", "minimum": 1, "maximum": 6 },
+        "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "stroke": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "stroke_px": { "type": "number", "minimum": 0, "maximum": 20 },
+        "uppercase": { "type": "boolean" },
+        "position": { "type": "string", "enum": ["lower_third", "center", "upper_third"] }
+      }
+    },
+    "narrative_template": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "shot_hold_seconds_min": { "type": "number", "minimum": 1, "maximum": 15 },
+    "motion_intensity": { "type": "string", "enum": ["low", "medium", "high"] },
+    "disclaimers_required": { "type": "boolean" },
+    "disclaimer_text": { "type": "string" },
+    "music": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "prompt": { "type": "string" },
+        "gain_db": { "type": "number", "minimum": -40, "maximum": 0 }
+      }
+    }
+  }
+}

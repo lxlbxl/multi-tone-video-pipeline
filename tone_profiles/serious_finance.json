@@ -1,0 +1,25 @@
+{
+  "id": "serious_finance",
+  "voice_style": "measured, low pitch, minimal filler, precise, no hype",
+  "tts_voice_id": "onyx",
+  "tts_model": "multilingual",
+  "tts_stability": 0.6,
+  "tts_style": 0.15,
+  "pacing_wpm": 145,
+  "caption_style": {
+    "font_family": "Arial",
+    "font_weight": "bold",
+    "max_words_per_pop": 2,
+    "color": "#FFFFFF",
+    "stroke": "#000000",
+    "stroke_px": 6,
+    "uppercase": false,
+    "position": "lower_third"
+  },
+  "narrative_template": "problem_mechanism_payoff",
+  "shot_hold_seconds_min": 6,
+  "motion_intensity": "low",
+  "disclaimers_required": true,
+  "disclaimer_text": "This content is for general information only and is not financial advice. Consult a licensed professional before making decisions.",
+  "music": { "enabled": false, "prompt": "sparse minimal piano underscore, calm, corporate, no drums", "gain_db": -26 }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "playful_consumer",
+  "voice_style": "upbeat, energetic, conversational, warm, slightly fast",
+  "tts_voice_id": "echo",
+  "tts_model": "multilingual",
+  "tts_stability": 0.4,
+  "tts_style": 0.45,
+  "pacing_wpm": 175,
+  "caption_style": {
+    "font_family": "Arial",
+    "font_weight": "extrabold",
+    "max_words_per_pop": 1,
+    "color": "#FFF200",
+    "stroke": "#000000",
+    "stroke_px": 8,
+    "uppercase": true,
+    "position": "center"
+  },
+  "narrative_template": "myth_bust",
+  "shot_hold_seconds_min": 3,
+  "motion_intensity": "high",
+  "disclaimers_required": false,
+  "disclaimer_text": "",
+  "music": { "enabled": true, "prompt": "bright bouncy pop beat, playful, upbeat, punchy drums, no vocals, loopable", "gain_db": -20 }
+}

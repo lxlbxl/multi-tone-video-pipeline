@@ -1,0 +1,118 @@
+{
+  "_comment": "ILLUSTRATIVE ONLY — the CLI loads shot_list.json, not this file. Copy it there and retime to your actual VO to use it. Shows: all four motion types, tight one-word captions (playful_consumer caps at 1/pop), <=1 emphasis word per shot, an 'auto' background by tag, and a pose_crossfade with pose_b.",
+  "project": "example_playful_app",
+  "audio_duration": 34.0,
+  "narrative_template": "myth_bust",
+  "shots": [
+    {
+      "shot_id": "s01", "beat": "belief", "start": 0.0, "end": 4.2,
+      "characters": ["hoodie_guy"], "background": "small_bedroom", "background_query": [],
+      "composition": "Tight medium shot, hoodie_guy sits slumped on the edge of the unmade bed, phone face-down in one hand, staring at the floor, laundry pile behind him.",
+      "motion": { "type": "ken_burns", "direction": "in" },
+      "captions": [
+        { "text": "You" , "start": 0.2, "end": 0.6 },
+        { "text": "failed" , "start": 0.6, "end": 1.1, "emphasis": true },
+        { "text": "every" , "start": 1.1, "end": 1.5 },
+        { "text": "habit." , "start": 1.5, "end": 2.1 },
+        { "text": "Lazy," , "start": 2.4, "end": 3.0 },
+        { "text": "right?" , "start": 3.0, "end": 3.8 }
+      ]
+    },
+    {
+      "shot_id": "s02", "beat": "wrong", "start": 4.2, "end": 7.4,
+      "characters": ["coach_woman"], "background": "auto", "background_query": ["indoor", "social"],
+      "composition": "Wide shot, coach_woman stands centre frame in the coffee shop, one hand raised palm-out in a 'stop' gesture, confident, looking straight at camera.",
+      "motion": { "type": "parallax", "direction": "out" },
+      "captions": [
+        { "text": "Wrong." , "start": 4.5, "end": 5.3, "emphasis": true },
+        { "text": "Motivation" , "start": 5.5, "end": 6.3 },
+        { "text": "lies." , "start": 6.3, "end": 7.2 }
+      ]
+    },
+    {
+      "shot_id": "s03", "beat": "real_answer", "start": 7.4, "end": 12.0,
+      "characters": ["coach_woman", "hoodie_guy"], "background": "coffee_shop", "background_query": [],
+      "composition": "Two-shot at a small cafe table, coach_woman leans in pointing at a tiny checkbox drawn on a napkin, hoodie_guy watches, curious, coffee cups between them.",
+      "motion": { "type": "ken_burns", "direction": "left" },
+      "captions": [
+        { "text": "Winners" , "start": 7.6, "end": 8.2 },
+        { "text": "build" , "start": 8.2, "end": 8.7 },
+        { "text": "a" , "start": 8.7, "end": 8.9 },
+        { "text": "system." , "start": 8.9, "end": 9.7, "emphasis": true },
+        { "text": "Stupidly" , "start": 10.0, "end": 10.8 },
+        { "text": "small." , "start": 10.8, "end": 11.8 }
+      ]
+    },
+    {
+      "shot_id": "s04", "beat": "real_answer", "start": 12.0, "end": 16.5,
+      "characters": ["hoodie_guy"], "background": "small_bedroom", "background_query": [],
+      "composition": "Close shot, hoodie_guy drops to the bedroom floor and does exactly one push-up, half-smiling at how easy it is.",
+      "motion": { "type": "pose_crossfade", "pose_b": "Close shot, hoodie_guy back on his feet, one fist lightly clenched, small satisfied nod, same bedroom." },
+      "captions": [
+        { "text": "One" , "start": 12.3, "end": 12.8 },
+        { "text": "push-up." , "start": 12.8, "end": 13.7, "emphasis": true },
+        { "text": "One" , "start": 14.0, "end": 14.4 },
+        { "text": "page." , "start": 14.4, "end": 15.2 },
+        { "text": "Done." , "start": 15.4, "end": 16.3 }
+      ]
+    },
+    {
+      "shot_id": "s05", "beat": "payoff", "start": 16.5, "end": 21.5,
+      "characters": ["hoodie_guy"], "background": "city_sidewalk", "background_query": [],
+      "composition": "Wide walking shot, hoodie_guy strides down the sidewalk checking a glowing streak counter on his phone, posture straighter than before.",
+      "motion": { "type": "ken_burns", "direction": "in" },
+      "captions": [
+        { "text": "Your" , "start": 16.8, "end": 17.2 },
+        { "text": "brain" , "start": 17.2, "end": 17.7 },
+        { "text": "stops" , "start": 17.7, "end": 18.2 },
+        { "text": "arguing." , "start": 18.2, "end": 19.2, "emphasis": true },
+        { "text": "Streak" , "start": 19.6, "end": 20.2 },
+        { "text": "does" , "start": 20.2, "end": 20.6 },
+        { "text": "the" , "start": 20.6, "end": 20.8 },
+        { "text": "rest." , "start": 20.8, "end": 21.4 }
+      ]
+    },
+    {
+      "shot_id": "s06", "beat": "payoff", "start": 21.5, "end": 26.5,
+      "characters": ["hoodie_guy", "future_guy"], "background": "city_sidewalk", "background_query": [],
+      "composition": "Side-by-side on the sidewalk, slouched hoodie_guy on the left faces confident future_guy on the right holding a gym bag, a faint 90-days label implied by the gap between them.",
+      "motion": { "type": "pose_crossfade", "pose_b": "The left figure straightens up to match future_guy on the right; both now stand tall, matching stance." },
+      "captions": [
+        { "text": "Ninety" , "start": 21.8, "end": 22.4 },
+        { "text": "days" , "start": 22.4, "end": 22.9 },
+        { "text": "of" , "start": 22.9, "end": 23.1 },
+        { "text": "tiny" , "start": 23.1, "end": 23.6 },
+        { "text": "beats" , "start": 23.6, "end": 24.1 },
+        { "text": "one" , "start": 24.4, "end": 24.8 },
+        { "text": "week" , "start": 24.8, "end": 25.2 },
+        { "text": "of" , "start": 25.2, "end": 25.4 },
+        { "text": "beast-mode." , "start": 25.4, "end": 26.3, "emphasis": true }
+      ]
+    },
+    {
+      "shot_id": "s07", "beat": "recap", "start": 26.5, "end": 30.5,
+      "characters": ["future_guy"], "background": "auto", "background_query": ["outdoor", "urban"],
+      "composition": "Hero medium shot, future_guy centre frame on the sidewalk, gym bag on shoulder, giving a small confident thumbs-up to camera.",
+      "motion": { "type": "ken_burns", "direction": "out" },
+      "captions": [
+        { "text": "Start" , "start": 26.8, "end": 27.3 },
+        { "text": "laughably" , "start": 27.3, "end": 28.1 },
+        { "text": "easy." , "start": 28.1, "end": 29.0, "emphasis": true },
+        { "text": "Today." , "start": 29.3, "end": 30.3 }
+      ]
+    },
+    {
+      "shot_id": "s08", "beat": "recap", "start": 30.5, "end": 34.0,
+      "characters": ["future_guy"], "background": "city_sidewalk", "background_query": [],
+      "composition": "Same hero framing, future_guy holds up his phone showing a small streak flame icon, calm smile, holding the pose for the end.",
+      "motion": { "type": "hold", "direction": "in" },
+      "captions": [
+        { "text": "Search" , "start": 30.8, "end": 31.3 },
+        { "text": "Streakly." , "start": 31.3, "end": 32.3, "emphasis": true },
+        { "text": "First" , "start": 32.6, "end": 33.0 },
+        { "text": "streak" , "start": 33.0, "end": 33.5 },
+        { "text": "today." , "start": 33.5, "end": 33.95 }
+      ]
+    }
+  ]
+}

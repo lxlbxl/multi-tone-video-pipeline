@@ -1,0 +1,25 @@
+{
+  "id": "authoritative_b2b",
+  "voice_style": "confident, clear, brisk but not rushed, expert peer-to-peer",
+  "tts_voice_id": "nova",
+  "tts_model": "multilingual",
+  "tts_stability": 0.5,
+  "tts_style": 0.25,
+  "pacing_wpm": 160,
+  "caption_style": {
+    "font_family": "Arial",
+    "font_weight": "semibold",
+    "max_words_per_pop": 3,
+    "color": "#FFFFFF",
+    "stroke": "#0B1F33",
+    "stroke_px": 5,
+    "uppercase": false,
+    "position": "lower_third"
+  },
+  "narrative_template": "listicle",
+  "shot_hold_seconds_min": 4,
+  "motion_intensity": "medium",
+  "disclaimers_required": false,
+  "disclaimer_text": "",
+  "music": { "enabled": true, "prompt": "understated modern corporate groove, mid-tempo, motivating, subtle, no vocals", "gain_db": -24 }
+}

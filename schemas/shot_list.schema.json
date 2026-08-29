@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "shot_list",
+  "type": "object",
+  "required": ["project", "audio_duration", "shots"],
+  "additionalProperties": false,
+  "properties": {
+    "project": { "type": "string" },
+    "audio_duration": { "type": "number", "minimum": 0 },
+    "narrative_template": { "type": "string" },
+    "shots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["shot_id", "beat", "start", "end", "characters", "background",
+                     "composition", "motion", "captions"],
+        "additionalProperties": false,
+        "properties": {
+          "shot_id": { "type": "string", "pattern": "^s[0-9]{2,3}$" },
+          "beat": { "type": "string" },
+          "start": { "type": "number", "minimum": 0 },
+          "end": { "type": "number", "minimum": 0 },
+          "characters": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+            "maxItems": 4
+          },
+          "background": { "type": "string" },
+          "background_query": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "tag query used to resolve `background` when it was 'auto'"
+          },
+          "composition": { "type": "string", "minLength": 10 },
+          "motion": {
+            "type": "object",
+            "required": ["type"],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "type": "string", "enum": ["ken_burns", "parallax", "pose_crossfade", "hold"] },
+              "direction": { "type": "string", "enum": ["in", "out", "left", "right", "up", "down"] },
+              "pose_b": { "type": "string", "description": "second-pose composition for pose_crossfade" }
+            }
+          },
+          "captions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["text", "start", "end"],
+              "additionalProperties": false,
+              "properties": {
+                "text": { "type": "string", "minLength": 1 },
+                "start": { "type": "number", "minimum": 0 },
+                "end": { "type": "number", "minimum": 0 },
+                "emphasis": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

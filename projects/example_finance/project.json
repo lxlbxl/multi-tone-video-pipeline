@@ -1,0 +1,31 @@
+{
+  "name": "example_finance",
+  "brief": "Compliance-friendly explainer: why an emergency fund beats an extra investment contribution",
+  "style_pack": "flat_corporate_v1",
+  "tone_profile": "serious_finance",
+  "narrative_template": "problem_mechanism_payoff",
+  "seed": 90210,
+  "aspect": "9:16",
+  "resolution": "1K",
+  "target_seconds": 40,
+  "script": "scripts/example_finance.txt",
+  "cta": "Automate one transfer to a separate savings account this week",
+  "characters": [
+    {
+      "name": "advisor",
+      "style_pack": "flat_corporate_v1",
+      "role": "the explainer, a calm financial educator",
+      "description": "navy blazer, simple geometric build, minimal facial features, holding a tablet"
+    },
+    {
+      "name": "client",
+      "style_pack": "flat_corporate_v1",
+      "role": "the everyday saver working through the decision",
+      "description": "grey sweater, seated posture, thoughtful, coffee cup nearby"
+    }
+  ],
+  "backgrounds": [
+    { "name": "office_interior", "description": "clean modern advisory office, desk, plant, soft daylight through blinds", "tags": ["indoor", "professional", "calm"], "shared": true },
+    { "name": "boardroom", "description": "small glass-walled meeting room, long table, city skyline behind", "tags": ["indoor", "professional", "formal"] }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "background",
+  "type": "object",
+  "required": ["name", "description", "tags"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "project": { "type": "string" },
+    "description": { "type": "string", "minLength": 5 },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
+      "minItems": 1
+    },
+    "image": { "type": "string" },
+    "shared": { "type": "boolean", "description": "generic enough to reuse across projects" }
+  }
+}

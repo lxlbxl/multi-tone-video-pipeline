@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "style_pack",
+  "type": "object",
+  "required": ["id", "render_prefix", "forbidden"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "render_prefix": { "type": "string", "minLength": 20 },
+    "line_weight": { "type": "string", "enum": ["hairline", "thin", "soft", "medium", "bold", "heavy"] },
+    "palette": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$" },
+      "minItems": 1
+    },
+    "reference_pose": { "type": "string" },
+    "background_suffix": { "type": "string" },
+    "forbidden": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "notes": { "type": "string" }
+  }
+}

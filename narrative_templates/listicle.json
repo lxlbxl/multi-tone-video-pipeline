@@ -1,0 +1,11 @@
+{
+  "id": "listicle",
+  "fits": "tips / roundup content",
+  "hook_rules": "Promise the number and the payoff in the first line ('3 things that…'). Make item 1 the strongest so the viewer stays for the rest.",
+  "cta_beat": "cta",
+  "beats": [
+    { "id": "hook", "purpose": "promise the list and why it matters, name the count", "weight": 0.8, "caption_hint": "the count + payoff" },
+    { "id": "item", "purpose": "one list item: claim then one-line why", "weight": 1.0, "repeatable": true, "caption_hint": "item number + label" },
+    { "id": "cta", "purpose": "which item to start with today + follow for more", "weight": 0.7 }
+  ]
+}

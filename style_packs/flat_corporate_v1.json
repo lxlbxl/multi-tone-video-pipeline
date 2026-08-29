@@ -1,0 +1,10 @@
+{
+  "id": "flat_corporate_v1",
+  "render_prefix": "flat corporate vector illustration, clean geometric shapes, restrained professional palette, subtle long shadows, simplified faceless or minimal-feature figures, modern business editorial aesthetic, no 3D render, no photographic textures, calm and trustworthy mood",
+  "line_weight": "medium",
+  "palette": ["#1F3A5F", "#F5F7FA", "#4A90A4", "#C9D6DF"],
+  "reference_pose": "single figure, front three-quarter view, professional neutral stance, full body, plain light background, flat even lighting",
+  "background_suffix": "empty interior or abstract corporate environment with no people, flat vector rendering, uncluttered, lower third left clear for captions and disclaimers",
+  "forbidden": ["copyrighted characters", "realistic faces", "photographic textures", "competitor logos", "watermarks", "in-image text"],
+  "notes": "Reads as credible and compliant. Default pick for finance, B2B, healthcare, legal-adjacent explainers."
+}
