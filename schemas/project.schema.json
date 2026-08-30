@@ -35,6 +35,19 @@
     "seed": { "type": "integer" },
     "target_seconds": { "type": "number", "minimum": 6, "maximum": 180 },
     "disclaimer_text": { "type": "string", "description": "overrides the tone profile's disclaimer copy" },
-    "cta": { "type": "string" }
+    "cta": { "type": "string" },
+    "hook_text": {
+      "type": "string",
+      "description": "sound-off scroll-stopper burned over the first ~3s; name the audience in it for paid social"
+    },
+    "logos": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "brand logos burned into the top corners for the whole story",
+      "properties": {
+        "top_left": { "type": "string", "description": "path to a logo PNG (resolved against the asset root)" },
+        "top_right": { "type": "string" }
+      }
+    }
   }
 }

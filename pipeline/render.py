@@ -14,6 +14,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+from . import brand as brand_mod
 from . import captions as cap_mod
 from . import config, music, util
 from .tone import Tone
@@ -99,6 +100,9 @@ def render(project: "config.Project", tone: Tone, *, animated_clips: list[Path],
         body_cap = cap_mod.burn(body, ass, work / "body_captioned.mp4")
     else:
         body_cap = body
+
+    # brand logos (top corners) + opening text hook, if project.json declares them
+    body_cap = brand_mod.apply(body_cap, project, work=work)
 
     # audio bed
     bed = None
