@@ -1,0 +1,570 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#fff}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+const W = 1080, H = 1920, CX = 540, CY = 800;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let LY = [], ENV = null, LOGO = null, DUR = 66;
+
+// Palette: white-dominant, Ifá green + yellow (ìlẹ̀kẹ̀), soft gold, a touch of coral & palm-brown
+const C = {
+  white: '#ffffff', ivory: '#fbf8f1', cream: '#f4ecdc', chalk: '#efe9dc',
+  green: '#0f5a24', leaf: '#3f8a2a', lime: '#9cbc2a', yellow: '#e9b824',
+  gold: '#c9a24a', goldL: '#e6cf8f', coral: '#e2683a', brown: '#5a3420', ink: '#173a1f'
+};
+
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = x => { x = clamp(x); return x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3)/2; };
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const lerp = (a, b, t) => a + (b - a) * t;
+function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function env(key, t) { if (!ENV) return 0; const i = Math.floor(t * 30); const a = ENV[key]; return a[Math.max(0, Math.min(a.length - 1, i))] || 0; }
+function envS(key, t, w = 4) { let s = 0; for (let k = -w; k <= w; k++) s += env(key, t + k / 30); return s / (2*w + 1); }
+
+// ---------- background ----------
+const R = rng(7);
+const PARTS = Array.from({length: 150}, () => ({x: R()*W, y: R()*H, r: 1 + R()*4.5, sp: 12 + R()*45, ph: R()*6.28, k: R()}));
+const FEATH = Array.from({length: 14}, () => ({x: R()*W, y: R()*H, s: .6 + R()*.8, sp: 25 + R()*35, ph: R()*6.28, rot: R()*6.28}));
+
+function background(t) {
+  const g = ctx.createRadialGradient(CX, CY, 50, CX, CY + 200, 1400);
+  g.addColorStop(0, '#ffffff'); g.addColorStop(.55, '#fdfbf6'); g.addColorStop(1, '#efe6d2');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  // faint adire-style pattern grid (concentric circles + dots), very light
+  ctx.save(); ctx.globalAlpha = .07; ctx.strokeStyle = C.green; ctx.lineWidth = 2;
+  const cell = 180, off = (t * 6) % cell;
+  for (let y = -cell; y < H + cell; y += cell) for (let x = -cell; x < W + cell; x += cell) {
+    const px = x + ((y / cell) % 2 ? cell/2 : 0), py = y + off;
+    const d = Math.hypot(px - CX, py - CY); if (d < 520) continue;
+    ctx.beginPath(); ctx.arc(px, py, 34, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(px, py, 18, 0, 7); ctx.stroke();
+    for (let k = 0; k < 8; k++) { const a = k * Math.PI/4; ctx.beginPath(); ctx.arc(px + Math.cos(a)*56, py + Math.sin(a)*56, 3.5, 0, 7); ctx.fillStyle = C.green; ctx.fill(); }
+  }
+  ctx.restore();
+
+  // light rays from the centre (dawn — "o jíire")
+  const pulse = envS('low', t, 3);
+  ctx.save(); ctx.translate(CX, CY); ctx.rotate(t * 0.05);
+  for (let i = 0; i < 32; i++) {
+    const a = i * Math.PI * 2 / 32;
+    ctx.save(); ctx.rotate(a);
+    const lg = ctx.createLinearGradient(0, 0, 0, -1300);
+    lg.addColorStop(0, `rgba(233,184,36,${.10 + .08*pulse})`); lg.addColorStop(1, 'rgba(233,184,36,0)');
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(-38 - (i%2)*30, -1300); ctx.lineTo(38 + (i%2)*30, -1300); ctx.lineTo(6, 0); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // white halo
+  const hr = 560 + 30 * pulse;
+  const hg = ctx.createRadialGradient(CX, CY, 0, CX, CY, hr);
+  hg.addColorStop(0, 'rgba(255,255,255,1)'); hg.addColorStop(.6, 'rgba(255,255,255,.85)'); hg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(CX, CY, hr, 0, 7); ctx.fill();
+}
+
+function particles(t) {
+  const b = envS('rms', t, 2);
+  for (const p of PARTS) {
+    const y = ((p.y - t * p.sp) % H + H) % H, x = p.x + Math.sin(t * .6 + p.ph) * 30;
+    const a = .25 + .5 * (0.5 + 0.5*Math.sin(t*2 + p.ph)) * (0.6 + .6*b);
+    ctx.beginPath(); ctx.arc(x, y, p.r * (1 + .4*b), 0, 7);
+    ctx.fillStyle = p.k < .55 ? `rgba(201,162,74,${a*.55})` : p.k < .8 ? `rgba(156,188,42,${a*.4})` : `rgba(255,255,255,${a})`;
+    ctx.fill();
+  }
+}
+
+function feathers(t, amt) {
+  if (amt <= 0) return;
+  for (const f of FEATH) {
+    const y = ((f.y + t * f.sp) % (H + 200)) - 100, x = f.x + Math.sin(t*.9 + f.ph) * 60;
+    ctx.save(); ctx.globalAlpha = .55 * amt; ctx.translate(x, y); ctx.rotate(f.rot + Math.sin(t + f.ph) * .6); ctx.scale(f.s, f.s);
+    feather(0, 0, 70); ctx.restore();
+  }
+}
+function feather(x, y, L) {
+  ctx.strokeStyle = C.gold; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x, y + L/2); ctx.lineTo(x, y - L/2); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.95)';
+  ctx.beginPath(); ctx.moveTo(x, y - L/2); ctx.bezierCurveTo(x + 22, y - L/4, x + 18, y + L/4, x, y + L/3);
+  ctx.bezierCurveTo(x - 18, y + L/4, x - 22, y - L/4, x, y - L/2); ctx.fill();
+  ctx.strokeStyle = 'rgba(201,162,74,.6)'; ctx.lineWidth = 1; ctx.stroke();
+  for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.moveTo(x, y + i*8); ctx.lineTo(x + 14, y + i*8 - 8); ctx.moveTo(x, y + i*8); ctx.lineTo(x - 14, y + i*8 - 8); ctx.stroke(); }
+}
+
+// ---------- Ifá beads (ìlẹ̀kẹ̀) garlands on both sides ----------
+function beadStrand(x0, y0, x1, y1, sag, t, phase, n) {
+  for (let i = 0; i <= n; i++) {
+    const u = i / n; const sw = Math.sin(t * 1.1 + phase + u * 2) * 14 * Math.sin(u * Math.PI);
+    const x = lerp(x0, x1, u) + sw, y = lerp(y0, y1, u) + Math.sin(u * Math.PI) * sag;
+    const col = (Math.floor(i / 3) % 2) ? C.yellow : C.leaf;
+    ctx.beginPath(); ctx.arc(x, y, 7.5, 0, 7); ctx.fillStyle = col; ctx.fill();
+    ctx.beginPath(); ctx.arc(x - 2.5, y - 2.5, 2.4, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fill();
+  }
+}
+function garlands(t) {
+  ctx.save(); ctx.globalAlpha = .9;
+  beadStrand(34, 40, 30, 1880, 0, t, 0, 110);
+  beadStrand(1046, 40, 1050, 1880, 0, t, 2.1, 110);
+  // top swags between the strands
+  beadStrand(34, 230, 300, 210, 70, t, .4, 22);
+  beadStrand(1046, 230, 780, 210, 70, t, 1.7, 22);
+  ctx.restore();
+}
+
+// ---------- Òrìṣà medallion ring ----------
+const ORISHA = ['Ọbàtálá', 'Ṣàngó', 'Ọ̀ṣun', 'Yemọja', 'Ògún', 'Èṣù', 'Ọya', 'Ọ̀sanyìn'];
+function icon(i, s) {
+  ctx.save(); ctx.scale(s, s); ctx.lineWidth = 3.6; ctx.strokeStyle = '#b08a32'; ctx.fillStyle = '#b08a32'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  switch (i) {
+    case 0: // Ọbàtálá — white cloth + snail shell (ìgbín)
+      ctx.beginPath(); for (let a = 0; a < 12; a += .1) { const r = 2 + a * 1.9; const x = Math.cos(a) * r, y = Math.sin(a) * r * .8; a ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); break;
+    case 1: // Ṣàngó — double axe (oṣé)
+      ctx.beginPath(); ctx.moveTo(0, 26); ctx.lineTo(0, -6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -6); ctx.quadraticCurveTo(-26, -10, -22, -30); ctx.quadraticCurveTo(-8, -18, 0, -24); ctx.quadraticCurveTo(8, -18, 22, -30); ctx.quadraticCurveTo(26, -10, 0, -6); ctx.fill(); break;
+    case 2: // Ọ̀ṣun — brass fan (abẹ̀bẹ̀)
+      ctx.beginPath(); ctx.arc(0, -6, 20, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -6, 10, 0, 7); ctx.stroke();
+      for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; ctx.beginPath(); ctx.moveTo(Math.cos(a)*20, -6 + Math.sin(a)*20); ctx.lineTo(Math.cos(a)*26, -6 + Math.sin(a)*26); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(0, 14); ctx.lineTo(0, 30); ctx.stroke(); break;
+    case 3: // Yemọja — waves + crescent
+      ctx.beginPath(); ctx.arc(0, -12, 13, -1.2, 2.6); ctx.stroke();
+      for (let r = 0; r < 2; r++) { ctx.beginPath(); for (let x = -26; x <= 26; x += 2) { const y = 10 + r*12 + Math.sin(x / 5) * 4; x === -26 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke(); } break;
+    case 4: // Ògún — machete + iron
+      ctx.beginPath(); ctx.moveTo(-20, 22); ctx.lineTo(12, -16); ctx.quadraticCurveTo(26, -30, 22, -10); ctx.lineTo(-12, 28); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-20, 22); ctx.lineTo(-28, 30); ctx.stroke(); break;
+    case 5: // Èṣù — crossroads + cowrie
+      ctx.beginPath(); ctx.moveTo(-26, 0); ctx.lineTo(26, 0); ctx.moveTo(0, -26); ctx.lineTo(0, 26); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 0, 9, 13, 0, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(0, 8); ctx.stroke(); break;
+    case 6: // Ọya — wind spiral
+      for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(-4 + k*4, -4 + k*4, 8 + k*8, Math.PI * .2, Math.PI * 1.6); ctx.stroke(); } break;
+    case 7: // Ọ̀sanyìn — leaf
+      ctx.beginPath(); ctx.moveTo(0, 28); ctx.quadraticCurveTo(-28, 0, 0, -28); ctx.quadraticCurveTo(28, 0, 0, 28); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, 28); ctx.lineTo(0, -20); for (let k = -2; k <= 2; k++) { ctx.moveTo(0, k*8); ctx.lineTo(12, k*8 - 9); ctx.moveTo(0, k*8); ctx.lineTo(-12, k*8 - 9); } ctx.stroke(); break;
+  }
+  ctx.restore();
+}
+function orishaRing(t, amt) {
+  const r = 470, b = envS('low', t, 3);
+  ctx.save(); ctx.globalAlpha = amt;
+  // dotted orbit
+  ctx.setLineDash([2, 14]); ctx.strokeStyle = 'rgba(201,162,74,.55)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(CX, CY, r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+  for (let i = 0; i < 8; i++) {
+    const a = -Math.PI/2 + i * Math.PI / 4 + t * 0.08;
+    const x = CX + Math.cos(a) * r, y = CY + Math.sin(a) * r;
+    const s = 1 + .08 * b * ((i % 2) ? 1 : -.5);
+    ctx.save(); ctx.translate(x, y);
+    ctx.shadowColor = 'rgba(120,90,30,.18)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 6;
+    ctx.beginPath(); ctx.arc(0, 0, 54 * s, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.lineWidth = 2; ctx.strokeStyle = C.goldL; ctx.stroke();
+    icon(i, 1.15 * s);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// ---------- centre scenes ----------
+// 1) Ọpọ́n Ifá — divination tray, odù marks drawn in ìyẹ̀ròsùn, 16 ikin orbiting
+const ODU = [[1,2,2,1],[2,1,1,2],[1,1,2,2],[2,2,1,1],[1,2,1,2],[2,1,2,1]];
+function opon(t, lt) {
+  const R0 = 330, b = envS('low', t, 2);
+  ctx.save(); ctx.translate(CX, CY); ctx.rotate(Math.sin(t * .3) * .05);
+  ctx.shadowColor = 'rgba(90,60,20,.25)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18;
+  ctx.beginPath(); ctx.arc(0, 0, R0, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.shadowColor = 'transparent';
+  // carved border
+  ctx.lineWidth = 3; ctx.strokeStyle = C.gold;
+  ctx.beginPath(); ctx.arc(0, 0, R0 - 6, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, R0 - 70, 0, 7); ctx.stroke();
+  for (let i = 0; i < 48; i++) {
+    const a = i * Math.PI * 2 / 48; ctx.save(); ctx.rotate(a);
+    if (Math.abs(((a + Math.PI/2) % (Math.PI*2))) < .25 || Math.abs(((a + Math.PI/2) % (Math.PI*2)) - Math.PI*2) < .25) { ctx.restore(); continue; }
+    ctx.beginPath(); ctx.moveTo(0, -(R0 - 12)); ctx.lineTo(-14, -(R0 - 64)); ctx.lineTo(14, -(R0 - 64)); ctx.closePath();
+    ctx.fillStyle = i % 2 ? 'rgba(201,162,74,.85)' : 'rgba(156,188,42,.7)'; ctx.fill();
+    ctx.restore();
+  }
+  // Èṣù face at the top of the tray (orí ọpọ́n)
+  ctx.save(); ctx.translate(0, -(R0 - 38));
+  ctx.beginPath(); ctx.ellipse(0, 0, 32, 40, 0, 0, 7); ctx.fillStyle = C.gold; ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(-11, -6, 6, 3.5, 0, 0, 7); ctx.ellipse(11, -6, 6, 3.5, 0, 0, 7); ctx.fill();
+  ctx.fillRect(-2, -2, 4, 14); ctx.fillRect(-10, 18, 20, 4); ctx.restore();
+  // powder (ìyẹ̀ròsùn) surface
+  const pg = ctx.createRadialGradient(0, 0, 10, 0, 0, R0 - 72);
+  pg.addColorStop(0, '#fffdf8'); pg.addColorStop(1, '#f2e8d2');
+  ctx.beginPath(); ctx.arc(0, 0, R0 - 72, 0, 7); ctx.fillStyle = pg; ctx.fill();
+  const rr = rng(3); ctx.fillStyle = 'rgba(201,162,74,.22)';
+  for (let i = 0; i < 260; i++) { const a = rr() * 7, d = Math.sqrt(rr()) * (R0 - 80); ctx.fillRect(Math.cos(a)*d, Math.sin(a)*d, 2, 2); }
+  // odù marks being drawn
+  const odu = ODU[Math.floor(t / 2.2) % ODU.length];
+  const prog = clamp(lt / 1.6);
+  ctx.strokeStyle = C.green; ctx.lineCap = 'round'; ctx.lineWidth = 11;
+  for (let r = 0; r < 4; r++) for (let side = 0; side < 2; side++) {
+    const k = r * 2 + side, p = clamp(prog * 8 - k);
+    if (p <= 0) continue;
+    const x = side ? 55 : -55, y = -105 + r * 70, m = odu[(r + side) % 4];
+    if (m === 1) { ctx.beginPath(); ctx.moveTo(x, y - 24); ctx.lineTo(x, y - 24 + 48 * p); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.moveTo(x - 12, y - 24); ctx.lineTo(x - 12, y - 24 + 48 * p); ctx.moveTo(x + 12, y - 24); ctx.lineTo(x + 12, y - 24 + 48 * p); ctx.stroke(); }
+  }
+  ctx.restore();
+  // 16 ikin orbiting
+  for (let i = 0; i < 16; i++) {
+    const a = i * Math.PI / 8 + t * .35, rr2 = R0 + 52 + Math.sin(t * 2 + i) * 6 + b * 10;
+    const x = CX + Math.cos(a) * rr2, y = CY + Math.sin(a) * rr2;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+    ctx.beginPath(); ctx.ellipse(0, 0, 15, 11, 0, 0, 7);
+    const ig = ctx.createRadialGradient(-4, -4, 1, 0, 0, 16); ig.addColorStop(0, '#9a6a44'); ig.addColorStop(1, C.brown);
+    ctx.fillStyle = ig; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.moveTo(0, -6); ctx.lineTo(0, 6); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// 2) Ọ̀rúnmìlà — serene figure in white with Ifá beads and ìrùkẹ̀rẹ̀ whisk, 16-ray halo
+function orunmila(t, lt) {
+  const b = envS('low', t, 3), breathe = Math.sin(t * 1.3) * 4;
+  ctx.save(); ctx.translate(CX, CY + 40);
+  // 16-ray halo (16 principal odù)
+  for (let i = 0; i < 16; i++) {
+    const a = i * Math.PI / 8 + t * .1; ctx.save(); ctx.translate(0, -190); ctx.rotate(a);
+    ctx.beginPath(); ctx.moveTo(0, -150); ctx.lineTo(-10, -260 - 20*b - (i%2)*40); ctx.lineTo(10, -260 - 20*b - (i%2)*40); ctx.closePath();
+    ctx.fillStyle = i % 2 ? 'rgba(233,184,36,.55)' : 'rgba(156,188,42,.45)'; ctx.fill(); ctx.restore();
+  }
+  ctx.beginPath(); ctx.arc(0, -190, 150, 0, 7); ctx.strokeStyle = C.goldL; ctx.lineWidth = 3; ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, -190, 138, 0, 7); ctx.setLineDash([3, 10]); ctx.stroke(); ctx.setLineDash([]);
+  // robe (agbádá) — white, flowing
+  ctx.shadowColor = 'rgba(90,60,20,.22)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14;
+  ctx.beginPath(); ctx.moveTo(-70, -60);
+  ctx.bezierCurveTo(-210, -30 + breathe, -330, 140, -300, 330);
+  ctx.quadraticCurveTo(0, 380 + breathe, 300, 330);
+  ctx.bezierCurveTo(330, 140, 210, -30 + breathe, 70, -60); ctx.closePath();
+  ctx.fillStyle = '#fff'; ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = C.goldL; ctx.lineWidth = 3; ctx.stroke();
+  // robe folds + embroidery
+  ctx.strokeStyle = 'rgba(201,162,74,.45)'; ctx.lineWidth = 2;
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(s*60, -30); ctx.quadraticCurveTo(s*150, 150, s*120, 320); ctx.stroke(); ctx.beginPath(); ctx.moveTo(s*110, -20); ctx.quadraticCurveTo(s*240, 150, s*230, 320); ctx.stroke(); }
+  ctx.strokeStyle = C.gold; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-60, -40); ctx.quadraticCurveTo(0, 110, 60, -40); ctx.stroke();
+  for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(0, 0 + i * 24, 6, 0, 7); ctx.stroke(); }
+  // neck + head (rich brown), eyes closed, serene
+  ctx.fillStyle = '#5b3622'; ctx.fillRect(-28, -110, 56, 60);
+  ctx.beginPath(); ctx.ellipse(0, -175, 72, 88, 0, 0, 7); ctx.fill();
+  // cap (white fìlà)
+  ctx.beginPath(); ctx.moveTo(-76, -205); ctx.quadraticCurveTo(-60, -300, 10, -300); ctx.quadraticCurveTo(95, -290, 84, -205);
+  ctx.quadraticCurveTo(0, -230, -76, -205); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = C.goldL; ctx.lineWidth = 3; ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,240,210,.9)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(-26, -170, 14, .2, Math.PI - .2); ctx.stroke(); ctx.beginPath(); ctx.arc(26, -170, 14, .2, Math.PI - .2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, -128, 16, .3, Math.PI - .3); ctx.stroke();
+  // white chalk (ẹfun) dots on face
+  ctx.fillStyle = '#fff'; for (const [x, y] of [[-52, -150], [52, -150], [0, -222], [-44, -135], [44, -135]]) { ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill(); }
+  // Ifá beads — several green/yellow strands
+  for (let s = 0; s < 3; s++) {
+    for (let i = 0; i <= 30; i++) {
+      const u = i / 30, a = Math.PI * (0.1 + .8 * u);
+      const x = Math.cos(a) * (95 + s * 26), y = -70 + Math.sin(a) * (110 + s * 40) + Math.sin(t*1.5 + u*3) * 2;
+      ctx.beginPath(); ctx.arc(x, y, 6, 0, 7); ctx.fillStyle = (Math.floor(i/2) % 2) ? C.yellow : C.leaf; ctx.fill();
+    }
+  }
+  // ìrùkẹ̀rẹ̀ (whisk) in right hand, swaying
+  ctx.save(); ctx.translate(170, 120); ctx.rotate(-.5 + Math.sin(t * 1.8) * .25);
+  ctx.fillStyle = C.gold; ctx.fillRect(-7, -10, 14, 90);
+  for (let k = 0; k < 26; k++) { const a = -Math.PI/2 + (k - 13) * .045 + Math.sin(t*3 + k) * .04; ctx.strokeStyle = k % 3 ? 'rgba(255,255,255,.95)' : 'rgba(201,162,74,.7)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, -10); ctx.quadraticCurveTo(Math.cos(a)*90 + 10, Math.sin(a)*90, Math.cos(a)*170, Math.sin(a)*170 - 10); ctx.stroke(); }
+  ctx.restore();
+  ctx.restore();
+}
+
+// 3) Adé — beaded conical crown with birds on top and swaying bead veil
+function crown(t, lt) {
+  const b = envS('low', t, 2);
+  ctx.save(); ctx.translate(CX, CY + 20); const sc = 1 + .02 * b; ctx.scale(sc, sc);
+  // body of crown
+  ctx.shadowColor = 'rgba(90,60,20,.25)'; ctx.shadowBlur = 44; ctx.shadowOffsetY = 16;
+  ctx.beginPath(); ctx.moveTo(-210, 120); ctx.bezierCurveTo(-200, -60, -110, -280, 0, -330); ctx.bezierCurveTo(110, -280, 200, -60, 210, 120); ctx.closePath();
+  ctx.fillStyle = '#fff'; ctx.fill(); ctx.shadowColor = 'transparent'; ctx.save(); ctx.clip();
+  // bead rows — white dominant with green/yellow/coral motifs
+  for (let row = 0; row < 32; row++) {
+    const y = 120 - row * 14, half = 220 * Math.pow(1 - row / 34, .7);
+    for (let x = -half; x <= half; x += 13) {
+      const zig = Math.abs(((x / 13 + row) % 8) - 4);
+      let col = '#ffffff';
+      if (row % 8 === 3 || row % 8 === 4) col = zig < 2 ? C.yellow : C.leaf;
+      else if (zig === 0 && row % 2) col = C.coral;
+      else if (row % 8 === 0) col = C.gold;
+      ctx.beginPath(); ctx.arc(x + (row % 2) * 6, y, 5.4, 0, 7); ctx.fillStyle = col; ctx.fill();
+      if (col === '#ffffff') { ctx.strokeStyle = 'rgba(201,162,74,.35)'; ctx.lineWidth = 1; ctx.stroke(); }
+    }
+  }
+  ctx.restore();
+  // ancestral face on front
+  ctx.save(); ctx.translate(0, -40);
+  ctx.beginPath(); ctx.ellipse(0, 0, 58, 72, 0, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.96)'; ctx.fill(); ctx.strokeStyle = C.gold; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = C.green; ctx.beginPath(); ctx.ellipse(-20, -10, 12, 6, 0, 0, 7); ctx.ellipse(20, -10, 12, 6, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = C.gold; ctx.fillRect(-4, -4, 8, 26); ctx.fillStyle = C.coral; ctx.fillRect(-16, 34, 32, 7);
+  ctx.restore();
+  // band
+  ctx.beginPath(); ctx.rect(-214, 106, 428, 34); ctx.fillStyle = C.gold; ctx.fill();
+  for (let x = -200; x <= 200; x += 24) { ctx.beginPath(); ctx.arc(x, 123, 7, 0, 7); ctx.fillStyle = (x/24) % 2 ? C.leaf : C.yellow; ctx.fill(); }
+  // bird on top (ẹyẹ) + two small birds
+  function bird(x, y, s, flap) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = C.gold; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(0, 0, 30, 20, -.15, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(26, -18, 12, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(37, -18); ctx.lineTo(50, -14); ctx.lineTo(37, -12); ctx.fillStyle = C.yellow; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-6, -4); ctx.quadraticCurveTo(-30, -40 - flap*20, -54, -28 - flap*30); ctx.quadraticCurveTo(-30, -8, -6, 6); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  bird(0, -350, 1.2, Math.sin(t * 6) * .5 + .5);
+  bird(-120, -200, .7, Math.sin(t * 7 + 1) * .5 + .5);
+  ctx.save(); ctx.scale(-1, 1); bird(-120, -200, .7, Math.sin(t * 7 + 2) * .5 + .5); ctx.restore();
+  // bead veil (ìbòjú)
+  for (let k = 0; k < 19; k++) {
+    const x0 = -190 + k * 21;
+    for (let i = 0; i < 12; i++) {
+      const sw = Math.sin(t * 2.2 + k * .5) * (i * 1.4) * (1 + b);
+      ctx.beginPath(); ctx.arc(x0 + sw, 152 + i * 16, 5, 0, 7);
+      ctx.fillStyle = (i + k) % 4 === 0 ? C.leaf : (i + k) % 4 === 2 ? C.yellow : '#ffffff'; ctx.fill();
+      ctx.strokeStyle = 'rgba(201,162,74,.4)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+// 4) Òpè — oil palm, the tree of Ifá, swaying at dawn, with ikin clusters
+function palm(t, lt) {
+  const grow = easeOut(lt / 1.2), b = envS('low', t, 3);
+  ctx.save(); ctx.translate(CX, CY + 330);
+  // sun disc
+  const sg = ctx.createRadialGradient(0, -520, 10, 0, -520, 260); sg.addColorStop(0, 'rgba(255,236,170,.9)'); sg.addColorStop(1, 'rgba(255,236,170,0)');
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(0, -520, 260, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -520, 120 + b*8, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill(); ctx.strokeStyle = C.goldL; ctx.lineWidth = 3; ctx.stroke();
+  // ground mound
+  ctx.beginPath(); ctx.ellipse(0, 30, 300, 40, 0, 0, 7); ctx.fillStyle = 'rgba(201,162,74,.18)'; ctx.fill();
+  // trunk
+  const topY = -560 * grow, sway = Math.sin(t * .9) * 26;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 26; i++) {
+    const u = i / 26; if (u > grow) break;
+    const y = lerp(0, -560, u), x = sway * u * u + Math.sin(u * 3) * 10;
+    ctx.beginPath(); ctx.ellipse(x, y, 34 - u * 10, 12, 0, 0, 7); ctx.fillStyle = i % 2 ? '#8a5a36' : '#a47048'; ctx.fill();
+  }
+  if (grow > .95) {
+    const tx = sway, ty = -560;
+    // fronds
+    for (let f = 0; f < 14; f++) {
+      const a = -Math.PI / 2 + (f - 6.5) * .26 + Math.sin(t * 1.2 + f) * .05;
+      const len = 300 + (f % 3) * 40, droop = 0.9 + Math.abs(f - 6.5) * .12;
+      ctx.strokeStyle = f % 2 ? C.leaf : C.green; ctx.lineWidth = 6;
+      const ex = tx + Math.cos(a) * len, ey = ty + Math.sin(a) * len * .6 + len * .35 * droop * Math.abs(Math.cos(a));
+      const mx = tx + Math.cos(a) * len * .5, my = ty + Math.sin(a) * len * .55 - 40;
+      ctx.beginPath(); ctx.moveTo(tx, ty); ctx.quadraticCurveTo(mx, my, ex, ey); ctx.stroke();
+      // leaflets
+      ctx.lineWidth = 3; ctx.strokeStyle = f % 2 ? 'rgba(63,138,42,.85)' : 'rgba(156,188,42,.85)';
+      for (let k = 2; k < 18; k++) {
+        const u = k / 18, x = (1-u)*(1-u)*tx + 2*(1-u)*u*mx + u*u*ex, y = (1-u)*(1-u)*ty + 2*(1-u)*u*my + u*u*ey;
+        const L = 46 * (1 - u * .6);
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a + 1.9) * L, y + Math.sin(a + 1.9) * L + 18);
+        ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a - 1.9) * L, y + Math.sin(a - 1.9) * L + 18); ctx.stroke();
+      }
+    }
+    // ikin / palm nut clusters
+    for (let k = 0; k < 22; k++) {
+      const a = k * 2.4, r = 14 + (k % 5) * 7;
+      ctx.beginPath(); ctx.arc(tx + Math.cos(a) * r - 30, ty + 30 + Math.sin(a) * r * .6, 9, 0, 7); ctx.fillStyle = k % 3 ? C.coral : '#c0452a'; ctx.fill();
+      ctx.beginPath(); ctx.arc(tx + Math.cos(a) * r + 34, ty + 34 + Math.sin(a) * r * .6, 9, 0, 7); ctx.fillStyle = k % 3 ? '#d45a30' : C.brown; ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// 5) Àparò — partridges circling, wings beating with the singing
+function partridge(x, y, s, flap, dir) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s * dir, s);
+  ctx.shadowColor = 'rgba(90,60,20,.18)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 8;
+  ctx.beginPath(); ctx.ellipse(0, 0, 70, 46, -.1, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = C.gold; ctx.lineWidth = 3; ctx.stroke();
+  // speckles
+  const r = rng(11); ctx.fillStyle = 'rgba(90,52,32,.55)';
+  for (let i = 0; i < 26; i++) { const a = r() * 7, d = Math.sqrt(r()) * 38; ctx.beginPath(); ctx.arc(Math.cos(a)*d*1.5 - 8, Math.sin(a)*d*.9 + 6, 3, 0, 7); ctx.fill(); }
+  // head
+  ctx.beginPath(); ctx.arc(64, -38, 26, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(72, -44, 5, 0, 7); ctx.fillStyle = C.ink; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(88, -40); ctx.lineTo(108, -32); ctx.lineTo(88, -28); ctx.fillStyle = C.coral; ctx.fill();
+  ctx.strokeStyle = C.coral; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(66, -38, 20, .9, 2.6); ctx.stroke();
+  // tail
+  ctx.fillStyle = C.lime; ctx.beginPath(); ctx.moveTo(-66, -6); ctx.lineTo(-108, -34); ctx.lineTo(-100, 8); ctx.closePath(); ctx.fill();
+  // wing
+  ctx.save(); ctx.rotate(-.2);
+  ctx.beginPath(); ctx.moveTo(-10, -10);
+  ctx.quadraticCurveTo(-40, -90 - flap * 70, -110, -70 - flap * 90);
+  ctx.quadraticCurveTo(-60, -20, -10, 20); ctx.closePath();
+  ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = C.gold; ctx.lineWidth = 3; ctx.stroke();
+  ctx.strokeStyle = 'rgba(63,138,42,.6)'; ctx.lineWidth = 2;
+  for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(-10, 0); ctx.quadraticCurveTo(-40, -40 - flap * 40 - k*8, -100 + k*14, -60 - flap * 80 + k * 14); ctx.stroke(); }
+  ctx.restore();
+  ctx.restore();
+}
+function aparo(t, lt) {
+  const b = envS('rms', t, 2);
+  for (let i = 0; i < 5; i++) {
+    const a = t * .7 + i * Math.PI * 2 / 5, rx = 300, ry = 190;
+    const x = CX + Math.cos(a) * rx, y = CY + Math.sin(a) * ry - 20;
+    const depth = (Math.sin(a) + 1) / 2;
+    const flap = Math.sin(t * 9 + i * 1.7) * .5 + .5;
+    partridge(x, y, .7 + depth * .55 + b * .05, flap, Math.sin(a + Math.PI/2) < 0 ? -1 : 1);
+  }
+  // centre: a big feather + soft rings
+  ctx.save(); ctx.translate(CX, CY - 20); ctx.rotate(Math.sin(t) * .15); ctx.scale(2.6, 2.6); feather(0, 0, 90); ctx.restore();
+  ctx.strokeStyle = 'rgba(201,162,74,.35)'; ctx.lineWidth = 2;
+  for (let k = 0; k < 3; k++) { const rr2 = ((t * 80 + k * 120) % 360) + 60; ctx.globalAlpha = 1 - rr2 / 420; ctx.beginPath(); ctx.arc(CX, CY - 20, rr2, 0, 7); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+}
+
+// ---------- scene selection from lyric ----------
+function sceneOf(line) {
+  const s = line.yo;
+  if (s.startsWith('Òpè')) return 'palm';
+  if (s.includes('Aládé')) return 'crown';
+  if (s.startsWith('Ifá')) return 'opon';
+  if (s.includes('Ọ̀rúnmìlà')) return 'orunmila';
+  return 'aparo';
+}
+const SCENES = { palm, crown, opon, orunmila, aparo };
+
+function lineAt(t) { for (let i = 0; i < LY.length; i++) if (t >= LY[i].start - .15 && t < (LY[i + 1] ? LY[i + 1].start - .15 : 999)) return i; return 0; }
+
+function drawCentre(t) {
+  const i = lineAt(t), L = LY[i], sc = sceneOf(L), lt = t - (L.start - .15);
+  const prev = i > 0 ? sceneOf(LY[i - 1]) : null;
+  const xf = clamp(lt / .55);
+  const draw = (name, a, s, ltime) => {
+    if (a <= 0) return;
+    ctx.save(); ctx.globalAlpha = a; ctx.translate(CX, CY); ctx.scale(s, s); ctx.translate(-CX, -CY);
+    SCENES[name](t, ltime); ctx.restore();
+  };
+  if (prev && prev !== sc && xf < 1) {
+    draw(prev, 1 - ease(xf), 1 + .12 * ease(xf), lt + 3);
+    draw(sc, ease(xf), .88 + .12 * easeOut(xf), lt);
+    // white flash on scene change
+    ctx.fillStyle = `rgba(255,255,255,${.55 * Math.sin(Math.PI * xf)})`; ctx.fillRect(0, 0, W, H);
+  } else {
+    const ken = 1 + .03 * Math.sin(t * .4) + .015 * envS('low', t, 2);
+    draw(sc, 1, ken, lt);
+  }
+  return sc;
+}
+
+// ---------- lyric typography ----------
+function wrapWords(words, font, maxW) {
+  ctx.font = font; const lines = [[]]; let w = 0; const sp = ctx.measureText(' ').width;
+  for (const wd of words) { const ww = ctx.measureText(wd).width; if (w + ww > maxW && lines[lines.length - 1].length) { lines.push([]); w = 0; } lines[lines.length - 1].push(wd); w += ww + sp; }
+  return lines;
+}
+function lyric(t) {
+  const i = lineAt(t), L = LY[i], st = L.start - .15, en = (LY[i + 1] ? LY[i + 1].start : DUR) - .15, lt = t - st, dur = en - st;
+  const words = L.yo.split(' ');
+  const size = L.yo.length > 22 ? 82 : L.yo.length > 14 ? 100 : 120;
+  const font = `900 ${size}px "Inter Display", Inter, sans-serif`;
+  const rows = wrapWords(words, font, 900);
+  const baseY = 1440 - (rows.length - 1) * size * .55;
+  const out = clamp((en - t) / .25); // exit fade
+  // soft white plate behind lyrics
+  const pg = ctx.createRadialGradient(CX, 1470, 50, CX, 1470, 620);
+  pg.addColorStop(0, 'rgba(255,255,255,.92)'); pg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = pg; ctx.fillRect(0, 1050, W, 870);
+
+  ctx.font = font; ctx.textBaseline = 'alphabetic';
+  const sp = ctx.measureText(' ').width;
+  let wi = 0; const per = Math.min(.42, (dur * .7) / words.length);
+  rows.forEach((row, r) => {
+    const tw = row.reduce((s, w) => s + ctx.measureText(w).width, 0) + sp * (row.length - 1);
+    let x = CX - tw / 2; const y = baseY + r * size * 1.12;
+    for (const w of row) {
+      const ww = ctx.measureText(w).width;
+      const p = easeOut((lt - wi * per) / .35);
+      const active = lt >= wi * per && lt < (wi + 1) * per + .25;
+      ctx.save();
+      ctx.globalAlpha = p * out;
+      ctx.translate(x + ww / 2, y + (1 - p) * 40); ctx.scale(.9 + .1 * p + (active ? .04 : 0), .9 + .1 * p + (active ? .04 : 0));
+      const g = ctx.createLinearGradient(0, -size, 0, size * .2);
+      g.addColorStop(0, C.green); g.addColorStop(.55, C.leaf); g.addColorStop(1, '#c79a12');
+      ctx.shadowColor = 'rgba(15,90,36,.18)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
+      ctx.fillStyle = g; ctx.textAlign = 'center'; ctx.fillText(w, 0, 0);
+      ctx.shadowColor = 'transparent';
+      // gold underline sweep on the active word
+      if (active) { const u = clamp((lt - wi * per) / per); ctx.fillStyle = C.yellow; ctx.fillRect(-ww / 2, size * .16, ww * u, 7); }
+      ctx.restore();
+      x += ww + sp; wi++;
+    }
+  });
+  // English translation
+  const ep = easeOut((lt - .35) / .5) * out;
+  ctx.save(); ctx.globalAlpha = ep; ctx.textAlign = 'center';
+  let fs = 44; ctx.font = `italic ${fs}px "DejaVu Serif", serif`;
+  while (ctx.measureText(L.en).width > 880 && fs > 28) { fs -= 2; ctx.font = `italic ${fs}px "DejaVu Serif", serif`; }
+  ctx.fillStyle = '#5d6b55';
+  const ey = baseY + rows.length * size * 1.12 + 10;
+  ctx.fillText(L.en, CX, ey + (1 - ep) * 16);
+  // ornament
+  ctx.fillStyle = C.gold; ctx.globalAlpha = ep * .8;
+  ctx.fillRect(CX - 70, ey + 34, 50, 3); ctx.fillRect(CX + 20, ey + 34, 50, 3);
+  ctx.beginPath(); ctx.arc(CX, ey + 35, 6, 0, 7); ctx.fillStyle = C.leaf; ctx.fill();
+  ctx.restore();
+}
+
+// ---------- header + branding ----------
+function header(t) {
+  const a = clamp(t / 1.2) * clamp((DUR - .8 - t) / .6);
+  ctx.save(); ctx.globalAlpha = a * .85; ctx.textAlign = 'left';
+  ctx.font = '600 30px "Inter Display", Inter, sans-serif'; ctx.fillStyle = C.green;
+  ctx.fillText('ORIN IFÁ', 70, 112);
+  ctx.font = '400 28px "Inter Display", Inter, sans-serif'; ctx.fillStyle = '#7d8a70';
+  ctx.fillText('Ifá o jíire', 70, 150);
+  ctx.fillStyle = C.yellow; ctx.fillRect(70, 166, 54, 4);
+  ctx.restore();
+}
+function brand(t) {
+  if (!LOGO) return;
+  // subtle corner mark
+  const a = .82 * clamp((t - .4) / .8) * clamp((DUR - 1.6 - t) / .5);
+  const w = 132, h = w * LOGO.height / LOGO.width;
+  ctx.save(); ctx.globalAlpha = a; ctx.drawImage(LOGO, W - w - 58, 62, w, h); ctx.restore();
+  // gentle end sign-off
+  const e = clamp((t - (DUR - 1.7)) / .7);
+  if (e > 0) {
+    ctx.fillStyle = `rgba(255,255,255,${.9 * e})`; ctx.fillRect(0, 0, W, H);
+    const s = 260 * (0.92 + .08 * easeOut(e));
+    ctx.save(); ctx.globalAlpha = e; ctx.drawImage(LOGO, CX - s / 2, CY - s / 2 * LOGO.height / LOGO.width, s, s * LOGO.height / LOGO.width); ctx.restore();
+  }
+}
+
+function vignette() {
+  const g = ctx.createRadialGradient(CX, H / 2, 600, CX, H / 2, 1250);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(120,95,40,.10)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+
+window.drawFrame = (t) => {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.shadowColor = 'transparent';
+  background(t);
+  const sc = sceneOf(LY[lineAt(t)]);
+  orishaRing(t, sc === 'aparo' ? .55 : 1);
+  particles(t);
+  drawCentre(t);
+  feathers(t, sc === 'aparo' ? 1 : .35);
+  garlands(t);
+  vignette();
+  lyric(t);
+  header(t);
+  brand(t);
+};
+window.init = async (lyrics, envData, logoURL, dur) => {
+  LY = lyrics; ENV = envData; DUR = dur;
+  await document.fonts.load('900 100px "Inter Display"'); await document.fonts.load('italic 40px "DejaVu Serif"');
+  LOGO = await new Promise(r => { const im = new Image(); im.onload = () => r(im); im.src = logoURL; });
+  return true;
+};
+</script></body></html>
