@@ -15,7 +15,7 @@ cd projects/ifa_o_jiire
 node render.js . preview 3.2 24.5          # stills -> output/prev_*.jpg
 node render.js . full                      # -> output/video_noaudio.mp4 (~3 min)
 ffmpeg -i output/video_noaudio.mp4 -i <song.wav> -map 0:v -map 1:a -c:v copy \
-  -c:a aac -b:a 192k -af loudnorm=I=-14:TP=-1.5:LRA=11 -shortest -movflags +faststart \
+  -c:a aac -b:a 192k -af "loudnorm=I=-14:TP=-1.5:LRA=11,afade=t=out:st=62.4:d=3.5" -shortest -movflags +faststart \
   output/ifa_o_jiire_lyric_video.mp4
 ```
 
