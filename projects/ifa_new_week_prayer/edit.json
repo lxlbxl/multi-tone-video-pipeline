@@ -167,13 +167,8 @@
   },
   {
    "start": 94.4,
-   "end": 98.4,
+   "end": 98.1,
    "yo": "Igbé ruru láì r'áki, wọ́n lẹ lọ"
-  },
-  {
-   "start": 98.4,
-   "end": 102.2,
-   "yo": "Igbé ruru láì r'áki…"
   }
  ],
  "sections": [
@@ -242,6 +237,6 @@
    "emoji": "🌪️"
   }
  ],
- "src_dur": 102.2,
+ "src_dur": 98.1,
  "outro": 3.6
 }
