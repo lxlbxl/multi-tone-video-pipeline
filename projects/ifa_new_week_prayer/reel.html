@@ -1,0 +1,282 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#000}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+const W = 1080, H = 1920;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let E = null, LOGO = null, FRAME = null, NFR = 3066, SRC = 102.2, TOT = 105.8;
+const C = { green: '#0f5a24', deep: '#06301a', leaf: '#3f8a2a', lime: '#9cbc2a', yellow: '#f2c230', gold: '#c9a24a', goldL: '#e6cf8f', coral: '#e2683a', white: '#ffffff' };
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const easeIO = x => { x = clamp(x); return x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3)/2; };
+const back = x => { x = clamp(x); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3*Math.pow(x - 1, 3) + c1*Math.pow(x - 1, 2); };
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+const SANS = '"Inter Display", Inter, "Noto Color Emoji", sans-serif';
+
+function lineIdx(t) { const L = E.lines; for (let i = L.length - 1; i >= 0; i--) if (t >= L[i].start - .08) return i; return 0; }
+
+// ---------- video layer with jump-zoom "punch-ins" ----------
+const ANCHOR = { x: 560, y: 900 }; // face centre in output space
+function zoomAt(t) {
+  if (t >= SRC) return 1.06;
+  const i = lineIdx(t), L = E.lines[i];
+  const target = [1.0, 1.06, 1.03, 1.08][i % 4];
+  const prevT = i ? [1.0, 1.06, 1.03, 1.08][(i - 1) % 4] : 1.0;
+  const k = easeOut((t - (L.start - .08)) / .16);              // snappy punch
+  const drift = 1 + .015 * clamp((t - L.start) / Math.max(1, L.end - L.start)); // slow creep within the line
+  return (prevT + (target - prevT) * k) * drift;
+}
+function drawVideo(t, blur) {
+  if (!FRAME) return;
+  const z = zoomAt(t);
+  ctx.save();
+  if (blur) ctx.filter = `blur(${blur}px) brightness(.8)`;
+  ctx.translate(ANCHOR.x, ANCHOR.y); ctx.scale(z, z); ctx.translate(-ANCHOR.x, -ANCHOR.y);
+  ctx.drawImage(FRAME, 0, 0, W, H);
+  ctx.restore();
+}
+
+// ---------- branded frosted plate (captions live here; also hides old burned-in text) ----------
+const PL = { x: 10, y: 1356, w: 1060, h: 356 };
+function frosted(x, y, w, h, r, tint) {
+  ctx.save(); rr(x, y, w, h, r); ctx.clip();
+  ctx.filter = 'blur(26px)'; ctx.drawImage(cv, x - 40, y - 40, w + 80, h + 80, x - 40, y - 40, w + 80, h + 80); ctx.filter = 'none';
+  ctx.fillStyle = tint; ctx.fillRect(x, y, w, h);
+  ctx.restore();
+}
+function beadsRow(x0, x1, y, t, r = 7) {
+  let i = 0;
+  for (let x = x0; x <= x1; x += r * 2.3, i++) {
+    const yy = y + Math.sin(t * 2 + i * .45) * 1.5;
+    ctx.beginPath(); ctx.arc(x, yy, r, 0, 7); ctx.fillStyle = (Math.floor(i / 3) % 2) ? C.yellow : C.leaf; ctx.fill();
+    ctx.beginPath(); ctx.arc(x - r * .35, yy - r * .35, r * .32, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.65)'; ctx.fill();
+  }
+}
+function plate(t) {
+  const a = t < SRC ? 1 : clamp(1 - (t - SRC) / .35);
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 12;
+  rr(PL.x, PL.y, PL.w, PL.h, 38); ctx.fillStyle = 'rgba(6,48,26,.5)'; ctx.fill();
+  ctx.shadowColor = 'transparent';
+  frosted(PL.x, PL.y, PL.w, PL.h, 38, 'rgba(6,48,26,.72)');
+  // soft gold rim
+  rr(PL.x, PL.y, PL.w, PL.h, 38); ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(230,207,143,.7)'; ctx.stroke();
+  // bead trim (Ifá ìlẹ̀kẹ̀) across the top edge
+  beadsRow(PL.x + 60, PL.x + PL.w - 60, PL.y, t, 7);
+  // progress bar along the bottom
+  const p = clamp(t / SRC);
+  rr(PL.x + 40, PL.y + PL.h - 26, PL.w - 80, 8, 4); ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fill();
+  const g = ctx.createLinearGradient(PL.x + 40, 0, PL.x + PL.w - 40, 0); g.addColorStop(0, C.lime); g.addColorStop(1, C.yellow);
+  rr(PL.x + 40, PL.y + PL.h - 26, Math.max(8, (PL.w - 80) * p), 8, 4); ctx.fillStyle = g; ctx.fill();
+  ctx.restore();
+}
+
+// ---------- karaoke captions ----------
+function wrap(words, maxW) {
+  const rows = [[]]; let w = 0; const sp = ctx.measureText(' ').width;
+  for (const wd of words) { const ww = ctx.measureText(wd).width; if (w + ww > maxW && rows[rows.length - 1].length) { rows.push([]); w = 0; } rows[rows.length - 1].push(wd); w += ww + sp; }
+  return rows;
+}
+function captions(t) {
+  if (t >= SRC + .2) return;
+  const i = lineIdx(t), L = E.lines[i], st = L.start - .08, lt = t - st, dur = L.end - st;
+  const words = L.yo.split(' ');
+  let size = 74; ctx.font = `900 ${size}px ${SANS}`;
+  let rows = wrap(words, 930);
+  while (rows.length > 2 && size > 50) { size -= 4; ctx.font = `900 ${size}px ${SANS}`; rows = wrap(words, 930); }
+  // word timings weighted by length
+  const tot = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0;
+  const wt = words.map(w => { const s = acc; acc += (w.length + 2) / tot * dur * .92; return [s, acc]; });
+  const lineH = size * 1.14, top = PL.y + 150 - (rows.length - 1) * lineH / 2;
+  const pop = back(lt / .28);
+  const sp = ctx.measureText(' ').width; let wi = 0;
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  rows.forEach((row, r) => {
+    const tw = row.reduce((s, w) => s + ctx.measureText(w).width, 0) + sp * (row.length - 1);
+    let x = 540 - tw / 2; const y = top + r * lineH;
+    for (const w of row) {
+      const ww = ctx.measureText(w).width, [ws, we] = wt[wi];
+      const spoken = lt >= ws, active = lt >= ws && lt < we + .05;
+      const wp = easeOut((lt - ws) / .18);
+      ctx.save();
+      const s = (.86 + .14 * pop) * (active ? 1 + .08 * (1 - easeOut((lt - ws) / .3)) : 1);
+      ctx.translate(x + ww / 2, y); ctx.scale(s, s); ctx.translate(-ww / 2, 0);
+      ctx.globalAlpha = clamp(pop * 1.4);
+      ctx.lineJoin = 'round'; ctx.lineWidth = 10; ctx.strokeStyle = 'rgba(3,30,14,.85)'; ctx.strokeText(w, 0, 0);
+      ctx.fillStyle = spoken ? (active ? C.yellow : '#ffffff') : 'rgba(255,255,255,.55)';
+      if (active) { ctx.shadowColor = 'rgba(242,194,48,.65)'; ctx.shadowBlur = 24 * wp; }
+      ctx.fillText(w, 0, 0);
+      ctx.restore();
+      x += ww + sp; wi++;
+    }
+  });
+}
+
+// section chip (English context) sits on the plate's top edge
+function sectionChip(t) {
+  if (t >= SRC) return;
+  const S = E.sections; let k = 0; for (let i = 0; i < S.length; i++) if (t >= S[i].start) k = i;
+  const lt = t - S[k].start, a = easeOut(lt / .45);
+  ctx.save(); ctx.font = `700 34px ${SANS}`;
+  const txt = '✦  ' + S[k].text, tw = ctx.measureText(txt).width + 56;
+  const x = 540 - tw / 2, y = PL.y - 92 + (1 - a) * 24;
+  ctx.globalAlpha = a;
+  ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 6;
+  rr(x, y, tw, 64, 32); ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.fillStyle = C.green; ctx.textBaseline = 'middle'; ctx.textAlign = 'center'; ctx.fillText(txt, 540, y + 33);
+  ctx.restore();
+}
+
+// ---------- header (replaces the old burned-in title) + logo ----------
+function header(t) {
+  const a = t < SRC ? easeOut(t / .5) : clamp(1 - (t - SRC) / .35);
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  const x = 50, y = 132, w = 716, h = 222;
+  ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 8;
+  rr(x, y, w, h, 34); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fill(); ctx.shadowColor = 'transparent';
+  frosted(x, y, w, h, 34, 'rgba(255,255,255,.86)');
+  ctx.fillStyle = C.yellow; rr(x + 28, y + 36, 10, h - 72, 5); ctx.fill();
+  ctx.font = `800 26px ${SANS}`; ctx.fillStyle = '#b08a32'; ctx.textAlign = 'left'; ctx.fillText('✦  ÌWÚRE · BLESSING', x + 62, y + 58);
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  ctx.font = `900 60px ${SANS}`; ctx.fillStyle = C.green; ctx.fillText('NEW WEEK PRAYER 🙏🏾', x + 60, y + 128);
+  ctx.font = `500 34px ${SANS}`; ctx.fillStyle = '#5b6b50'; ctx.fillText('Àdúrà ọ̀sẹ̀ tuntun · Ifá', x + 62, y + 176);
+  ctx.restore();
+  // subtle logo, top-right, in the safe zone
+  if (LOGO) {
+    const lw = 150, lh = lw * LOGO.height / LOGO.width;
+    ctx.save(); ctx.globalAlpha = a * .95;
+    ctx.beginPath(); ctx.arc(960, 243 + lh / 2 - 6, lw * .62, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.88)'; ctx.fill();
+    ctx.drawImage(LOGO, 960 - lw / 2, 243 - 6, lw, lh); ctx.restore();
+  }
+}
+
+// ---------- hook: first seconds ----------
+function hook(t) {
+  if (t > 5.3) return;
+  // "sound on" sticker (also hides the early corner watermark)
+  const a = easeOut((t - .2) / .4) * clamp((5.25 - t) / .25);
+  ctx.save(); ctx.globalAlpha = a;
+  const x = 0, y = 868, w = 330, h = 196, wob = Math.sin(t * 6) * .03;
+  ctx.translate(x + 165, y + 98); ctx.rotate(-.05 + wob); ctx.scale(.85 + .15 * back((t - .2) / .5), .85 + .15 * back((t - .2) / .5)); ctx.translate(-165, -98);
+  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 8;
+  rr(10, 0, 310, 196, 36); ctx.fillStyle = C.yellow; ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `64px ${SANS}`; ctx.fillText('🔊', 165, 62);
+  ctx.font = `900 44px ${SANS}`; ctx.fillStyle = C.deep; ctx.fillText('SOUND ON', 165, 136);
+  ctx.restore();
+  // big kinetic intro line
+  const b = clamp(t / .35) * clamp((2.6 - t) / .35);
+  if (b > 0) {
+    ctx.save(); ctx.globalAlpha = b; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const s = .8 + .2 * back(t / .45); ctx.translate(540, 1150); ctx.scale(s, s); ctx.rotate(-.03);
+    ctx.font = `900 76px ${SANS}`; ctx.lineJoin = 'round';
+    ctx.lineWidth = 14; ctx.strokeStyle = C.deep; ctx.strokeText('Receive this blessing', 0, -48);
+    ctx.fillStyle = '#fff'; ctx.fillText('Receive this blessing', 0, -48);
+    ctx.font = `900 92px ${SANS}`; ctx.strokeText('for your week ✨', 0, 48); ctx.fillStyle = C.yellow; ctx.fillText('for your week ✨', 0, 48);
+    ctx.restore();
+  }
+}
+
+// ---------- òrìṣà callouts + pop stickers ----------
+function icon(i, s) {
+  ctx.save(); ctx.scale(s, s); ctx.lineWidth = 3.6; ctx.strokeStyle = '#b08a32'; ctx.fillStyle = '#b08a32'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  switch (i) {
+    case 0: ctx.beginPath(); for (let a = 0; a < 12; a += .1) { const r = 2 + a * 1.9; const x = Math.cos(a) * r, y = Math.sin(a) * r * .8; a ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); break; // Ọ̀ṣàlá — snail shell
+    case 1: ctx.beginPath(); ctx.moveTo(0, 26); ctx.lineTo(0, -6); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, -6); ctx.quadraticCurveTo(-26, -10, -22, -30); ctx.quadraticCurveTo(-8, -18, 0, -24); ctx.quadraticCurveTo(8, -18, 22, -30); ctx.quadraticCurveTo(26, -10, 0, -6); ctx.fill(); break; // Ṣàngó — oṣé
+    case 7: ctx.beginPath(); ctx.moveTo(0, 28); ctx.quadraticCurveTo(-28, 0, 0, -28); ctx.quadraticCurveTo(28, 0, 0, 28); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, 28); ctx.lineTo(0, -20); for (let k = -2; k <= 2; k++) { ctx.moveTo(0, k*8); ctx.lineTo(12, k*8 - 9); ctx.moveTo(0, k*8); ctx.lineTo(-12, k*8 - 9); } ctx.stroke(); break; // Ọ̀sanyìn — leaf
+    case 8: // Ìyá mi — bird
+      ctx.beginPath(); ctx.ellipse(-2, 6, 22, 14, -.2, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(18, -8, 9, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(26, -8); ctx.lineTo(36, -4); ctx.lineTo(26, -2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-6, 0); ctx.quadraticCurveTo(-20, -30, -34, -26); ctx.quadraticCurveTo(-22, -6, -8, 10); ctx.fill(); break;
+  }
+  ctx.restore();
+}
+function stickers(t) {
+  for (const s of E.stickers) {
+    const lt = t - s.t, life = s.kind === 'orisha' ? 3.6 : 2.0;
+    if (lt < 0 || lt > life) continue;
+    const inn = back(lt / .4), out = clamp((life - lt) / .3);
+    ctx.save(); ctx.globalAlpha = out;
+    if (s.kind === 'orisha') {
+      const x = 70 - (1 - easeOut(lt / .35)) * 300, y = 1110;
+      ctx.translate(x, y);
+      ctx.font = `800 40px ${SANS}`; const tw = ctx.measureText(s.name).width;
+      ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 6;
+      rr(0, 0, tw + 150, 104, 52); ctx.fillStyle = 'rgba(255,255,255,.96)'; ctx.fill(); ctx.shadowColor = 'transparent';
+      ctx.beginPath(); ctx.arc(52, 52, 38, 0, 7); ctx.fillStyle = '#fbf3dc'; ctx.fill(); ctx.strokeStyle = C.goldL; ctx.lineWidth = 2; ctx.stroke();
+      ctx.save(); ctx.translate(52, 52); icon(s.icon, 1.0); ctx.restore();
+      ctx.fillStyle = C.green; ctx.textBaseline = 'middle'; ctx.fillText(s.name, 108, 46);
+      ctx.font = `600 22px ${SANS}`; ctx.fillStyle = '#8a7a4a'; ctx.fillText('ÒRÌṢÀ', 110, 80);
+    } else {
+      ctx.translate(540, 1090); ctx.rotate(-.06 + Math.sin(lt * 5) * .02); ctx.scale(inn, inn);
+      ctx.font = `900 96px ${SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const label = s.emoji + ' ' + s.text, tw = ctx.measureText(label).width + 90;
+      ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10;
+      rr(-tw / 2, -78, tw, 156, 40); ctx.fillStyle = C.yellow; ctx.fill(); ctx.shadowColor = 'transparent';
+      ctx.fillStyle = C.deep; ctx.fillText(label, 0, 6);
+      // burst sparkles
+      for (let k = 0; k < 14; k++) { const a = k * Math.PI * 2 / 14, d = 120 + easeOut(lt / .6) * 170; ctx.globalAlpha = out * clamp(1 - lt / .9);
+        ctx.beginPath(); ctx.arc(Math.cos(a) * d * 1.6, Math.sin(a) * d * .8, 9, 0, 7); ctx.fillStyle = k % 2 ? '#fff' : C.yellow; ctx.fill(); }
+    }
+    ctx.restore();
+  }
+}
+
+// line-change flash for energy at section starts
+function flash(t) {
+  for (const s of E.sections) { const lt = t - s.start; if (s.start > 0 && lt >= 0 && lt < .25) { ctx.fillStyle = `rgba(255,255,255,${.5 * (1 - lt / .25)})`; ctx.fillRect(0, 0, W, H); } }
+}
+
+function vignette() {
+  const g = ctx.createRadialGradient(540, 820, 500, 540, 960, 1250);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.35)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+
+// ---------- outro ----------
+function outro(t) {
+  const lt = t - SRC; if (lt < 0) return;
+  const a = easeOut(lt / .5);
+  const og = ctx.createLinearGradient(0, 0, 0, H); og.addColorStop(0, '#ffffff'); og.addColorStop(1, '#f3ecdb');
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = og; ctx.fillRect(0, 0, W, H); ctx.restore();
+  ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (LOGO) { const s = 300 * (.85 + .15 * back(lt / .6)), h = s * LOGO.height / LOGO.width; ctx.drawImage(LOGO, 540 - s / 2, 560 - h / 2, s, h); }
+  const b = back((lt - .35) / .5);
+  ctx.translate(540, 900); ctx.scale(b, b);
+  ctx.font = `800 52px ${SANS}`; ctx.fillStyle = C.green; ctx.fillText('Comment', 0, -110);
+  ctx.font = `900 200px ${SANS}`; const g = ctx.createLinearGradient(0, -80, 0, 80); g.addColorStop(0, C.green); g.addColorStop(1, '#c79a12');
+  ctx.fillStyle = g; ctx.fillText('ÀṢẸ', 0, 30);
+  ctx.font = `700 46px ${SANS}`; ctx.fillStyle = '#4c5a42'; ctx.fillText('to receive this prayer 🙏🏾', 0, 170);
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha = easeOut((lt - .9) / .5); ctx.textAlign = 'center';
+  ctx.font = `600 38px ${SANS}`; ctx.fillStyle = C.green; ctx.fillText('Share it with someone who needs it this week', 540, 1260);
+  beadsRow(250, 830, 1330, t, 8);
+  ctx.restore();
+}
+
+window.drawFrame = (t) => {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.shadowColor = 'transparent';
+  drawVideo(t, t >= SRC ? clamp((t - SRC) / .5) * 18 : 0);
+  vignette();
+  flash(t);
+  header(t);
+  hook(t);
+  sectionChip(t);
+  plate(t);
+  captions(t);
+  stickers(t);
+  outro(t);
+};
+window.setFrame = (url) => new Promise(r => { const im = new Image(); im.onload = () => { FRAME = im; r(); }; im.src = url; });
+window.init = async (edit, logoURL) => {
+  E = edit; SRC = edit.src_dur; TOT = SRC + edit.outro;
+  await document.fonts.load(`900 80px "Inter Display"`); await document.fonts.load(`700 40px "Inter Display"`); await document.fonts.load(`40px "Noto Color Emoji"`);
+  LOGO = await new Promise(r => { const im = new Image(); im.onload = () => r(im); im.src = logoURL; });
+  return TOT;
+};
+</script></body></html>

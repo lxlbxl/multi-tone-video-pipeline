@@ -1,0 +1,247 @@
+{
+ "lines": [
+  {
+   "start": 0.0,
+   "end": 2.2,
+   "yo": "A ké funfun"
+  },
+  {
+   "start": 2.2,
+   "end": 4.1,
+   "yo": "A fọ̀ kunkun"
+  },
+  {
+   "start": 4.1,
+   "end": 5.9,
+   "yo": "Orí ìrókò"
+  },
+  {
+   "start": 5.9,
+   "end": 7.4,
+   "yo": "Kírákárúkú"
+  },
+  {
+   "start": 7.4,
+   "end": 9.4,
+   "yo": "Kírákárúkú"
+  },
+  {
+   "start": 9.4,
+   "end": 11.2,
+   "yo": "Alátẹ ọ̀run"
+  },
+  {
+   "start": 11.2,
+   "end": 13.0,
+   "yo": "A jẹ dídùn níyànmọ̀bí"
+  },
+  {
+   "start": 13.0,
+   "end": 14.8,
+   "yo": "Wọ́n ní kí lẹ ní lọ́wọ́?"
+  },
+  {
+   "start": 14.8,
+   "end": 17.5,
+   "yo": "Tẹ́ ẹ fi mú lágbájá ọmọ lágbájá?"
+  },
+  {
+   "start": 17.5,
+   "end": 20.4,
+   "yo": "Wọ́n ní àfojúodé akísinsin"
+  },
+  {
+   "start": 20.4,
+   "end": 23.8,
+   "yo": "Ẹnìkẹ́yìn t'orí odé akísinsin"
+  },
+  {
+   "start": 23.8,
+   "end": 25.6,
+   "yo": "Alágbẹ̀dẹ ọ̀run"
+  },
+  {
+   "start": 25.6,
+   "end": 27.6,
+   "yo": "A jẹ dídùn níyànmọ̀bí"
+  },
+  {
+   "start": 27.6,
+   "end": 30.5,
+   "yo": "Oró tó rọ tọ̀rọ̀ lára agbẹ̀dẹ ẹ̀jẹ̀"
+  },
+  {
+   "start": 30.5,
+   "end": 34.6,
+   "yo": "Agbẹ̀dẹ, wọ́n lọ́rọ̀ dẹ́wẹ́wẹ́ tó fi l'áwọn Oṣu lọ́wọ́"
+  },
+  {
+   "start": 34.6,
+   "end": 39.5,
+   "yo": "Wọ́n lọ́rọ̀ jẹ́bálábá tó fi l'áwọn Ọ̀ṣàlá lọ́wọ́"
+  },
+  {
+   "start": 39.5,
+   "end": 44.5,
+   "yo": "Wọ́n l'ọ́wọ́ rọ̀ẹ́sọ̀pẹ́dì tó fi l'áwọn Ṣàngó náà lọ́wọ́"
+  },
+  {
+   "start": 44.5,
+   "end": 49.3,
+   "yo": "Wọ́n lọ́rọ̀ rẹbùtùbàtù tó fi l'áwọn Ọ̀sanyìn lọ́wọ́"
+  },
+  {
+   "start": 49.3,
+   "end": 52.8,
+   "yo": "Nígbà tí wọn ò gbọ́ ọ̀rọ̀ dẹ́wẹ́wẹ́ lọ́wọ́ Oṣu"
+  },
+  {
+   "start": 52.8,
+   "end": 55.4,
+   "yo": "Kí lẹ́ ẹ fi lẹ̀ pa wọ́n sí?"
+  },
+  {
+   "start": 55.4,
+   "end": 58.7,
+   "yo": "Nígbà tí wọn ò gb'óró tọ̀rọ̀ lọ́wọ́ Ọ̀ṣàlá"
+  },
+  {
+   "start": 58.7,
+   "end": 61.1,
+   "yo": "Kí lẹ́ ẹ fi lẹ̀ pa wọ́n sí?"
+  },
+  {
+   "start": 61.1,
+   "end": 64.9,
+   "yo": "Nígbà tí wọn ò gba ìsọ́pẹ́dì lọ́wọ́ àwọn Ṣàngó náà"
+  },
+  {
+   "start": 64.9,
+   "end": 67.3,
+   "yo": "Kí lẹ́ ẹ fi lẹ̀ pa wọ́n sí?"
+  },
+  {
+   "start": 67.3,
+   "end": 71.0,
+   "yo": "Nígbà tí wọn ò wá gba ọ̀sọ̀rọ̀gọ̀ lọ́wọ́ àwọn Ìyá mi Ọ̀ṣọ̀rọ̀ngà"
+  },
+  {
+   "start": 71.0,
+   "end": 74.9,
+   "yo": "Kí lẹ fẹ́ ọ̀sọ̀rọ̀gọ̀ wọ̀nyí pa wọ́n sí?"
+  },
+  {
+   "start": 74.9,
+   "end": 77.3,
+   "yo": "Ẹ wá f'ọ̀sọ̀rọ̀gọ̀ wọ̀nyí nì"
+  },
+  {
+   "start": 77.3,
+   "end": 79.4,
+   "yo": "Ẹ fi sọ wọ́n d'olówó"
+  },
+  {
+   "start": 79.4,
+   "end": 81.3,
+   "yo": "Ẹ sọ wá d'ọlọ́lá"
+  },
+  {
+   "start": 81.3,
+   "end": 83.2,
+   "yo": "Ẹ sọ wá d'ọlọ́lá"
+  },
+  {
+   "start": 83.2,
+   "end": 86.8,
+   "yo": "T'oníṣègùn bá ń p'orí wa níbi lónìí o"
+  },
+  {
+   "start": 86.8,
+   "end": 90.9,
+   "yo": "Igbé ruru láì r'áki, wọ́n lẹ lọ"
+  },
+  {
+   "start": 90.9,
+   "end": 94.4,
+   "yo": "Oníṣègùn tó bá ń p'orí wa níbi lónìí o"
+  },
+  {
+   "start": 94.4,
+   "end": 98.4,
+   "yo": "Igbé ruru láì r'áki, wọ́n lẹ lọ"
+  },
+  {
+   "start": 98.4,
+   "end": 102.2,
+   "yo": "Igbé ruru láì r'áki…"
+  }
+ ],
+ "sections": [
+  {
+   "start": 0,
+   "text": "Calling the ancient names of heaven"
+  },
+  {
+   "start": 27.6,
+   "text": "The gifts given to the Òrìṣà"
+  },
+  {
+   "start": 49.3,
+   "text": "Who can harm the ones they protect?"
+  },
+  {
+   "start": 74.9,
+   "text": "Turn us to wealth & honour"
+  },
+  {
+   "start": 83.2,
+   "text": "Evil sent our way? Scattered into the bush"
+  }
+ ],
+ "stickers": [
+  {
+   "t": 34.6,
+   "kind": "orisha",
+   "icon": 0,
+   "name": "Ọ̀ṣàlá"
+  },
+  {
+   "t": 39.5,
+   "kind": "orisha",
+   "icon": 1,
+   "name": "Ṣàngó"
+  },
+  {
+   "t": 44.5,
+   "kind": "orisha",
+   "icon": 7,
+   "name": "Ọ̀sanyìn"
+  },
+  {
+   "t": 67.3,
+   "kind": "orisha",
+   "icon": 8,
+   "name": "Ìyá mi Ọ̀ṣọ̀rọ̀ngà"
+  },
+  {
+   "t": 77.3,
+   "kind": "pop",
+   "text": "WEALTH",
+   "emoji": "💰"
+  },
+  {
+   "t": 79.4,
+   "kind": "pop",
+   "text": "HONOUR",
+   "emoji": "👑"
+  },
+  {
+   "t": 86.8,
+   "kind": "pop",
+   "text": "EVIL, BE GONE",
+   "emoji": "🌪️"
+  }
+ ],
+ "src_dur": 102.2,
+ "outro": 3.6
+}
