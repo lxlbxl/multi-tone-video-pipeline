@@ -6,8 +6,11 @@ Credit the original posters in the post caption.
 
 - `edit.json`: 11 homage sections (Olódùmarè, Ilẹ̀, Ayé, Ẹ̀là, Ọ̀rúnmìlà, Agbọnnìrègún, Ìyá mi, Odù, Ọbàtálá, Ọ̀ṣun, Ṣàngó), ÀṢẸ onsets, and caption lines
   `[start, end, text, [[word_start, word_end], …]]`. **Edit this** to correct captions.
-- `vad.json` + `segtext.json`: the timing source. `vad.json` holds 113 voice-activity phrase segments measured from the audio, and `segtext.json` holds the Yoruba transcribed per segment.
-  Captions, section starts and ÀṢẸ stamps all come from these, so they land on real phrase onsets.
+- `align/windows.json` + `align/assemble.py`: the timing source. The chant was aligned in six ~30 s overlapping
+  windows (short clips give precise phrase/word timestamps; a single 3-min pass drifted by up to 3 s), merged, then
+  every line start snapped to the nearest acoustic onset in the audio. Pacing rules: ≤9 words per line, no line
+  shorter than 0.75 s (fragments fold into a neighbour), captions lead the voice by 0.12 s, ÀṢẸ stamp clears
+  before the next phrase. Rebuild: `python3 align/assemble.py align/windows.json audio.wav edit.json edit.json`
 - `reel.html`: overlays: header with 10-bead section tracker, deity title cards, karaoke captions,
   ÀṢẸ stamp on every "Àṣẹ", kinetic CTA band under the video (cycles Comment / Share / Follow / Save,
   switches to "Type ÀṢẸ 👇🏾" after each ÀṢẸ), hook, outro CTA, logo.

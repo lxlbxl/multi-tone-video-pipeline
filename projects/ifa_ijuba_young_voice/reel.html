@@ -15,7 +15,7 @@ const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
 const back = x => { x = clamp(x); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3*Math.pow(x - 1, 3) + c1*Math.pow(x - 1, 2); };
 function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function secIdx(t) { let k = 0; for (let i = 0; i < E.sections.length; i++) if (t >= E.sections[i].start - .1) k = i; return k; }
-function lineIdx(t) { for (let i = LINES.length - 1; i >= 0; i--) if (t >= LINES[i][0] - .06) return i; return -1; }
+function lineIdx(t) { for (let i = LINES.length - 1; i >= 0; i--) if (t >= LINES[i][0] - .12) return i; return -1; }
 
 // ---------- base: pre-composited, upscaled frame; gentle push on section changes ----------
 function base(t) {
@@ -136,11 +136,11 @@ function captions(t) {
   rr(PL.x + 36, PL.y + PL.h - 22, Math.max(7, (PL.w - 72) * p), 7, 3.5); ctx.fillStyle = pg; ctx.fill();
   const li = lineIdx(t);
   if (li >= 0 && t < SRC + .1) {
-    const [st0, en, yo, wtimes] = LINES[li], st = st0 - .06, lt = t - st;
+    const [st0, en, yo, wtimes] = LINES[li], st = st0 - .12, lt = t - st;
     const words = yo.split(' ');
     let size = 64; ctx.font = `900 ${size}px ${SANS}`; let rows = wrap(words, 920);
     while (rows.length > 2 && size > 44) { size -= 4; ctx.font = `900 ${size}px ${SANS}`; rows = wrap(words, 920); }
-    const wt = wtimes.map(([a, b]) => [a - st - .04, b - st - .04]);
+    const wt = wtimes.map(([a, b]) => [a - st - .06, b - st - .06]);
     const lineH = size * 1.13, top = PL.y + 80 - (rows.length - 1) * lineH / 2, pop = back(lt / .25);
     const sp = ctx.measureText(' ').width; let wi = 0;
     ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
@@ -165,12 +165,15 @@ function captions(t) {
 // ---------- ÀṢẸ stamp on every "Àṣẹ" ----------
 function aseStamp(t) {
   for (const t0 of ASE) {
-    const lt = t - t0; if (lt < 0 || lt > 1.5) continue;
-    const inn = back(lt / .32), out = clamp((1.5 - lt) / .35);
+    // live until the next phrase starts (never longer than 1.4s, never shorter than 0.8s)
+    let nxt = 1e9; for (const L of LINES) if (L[0] > t0 + .2) { nxt = L[0]; break; }
+    const life = clamp(nxt - .12 - t0, .8, 1.4);
+    const lt = t - t0; if (lt < 0 || lt > life) continue;
+    const inn = back(lt / .28), out = clamp((life - lt) / .25);
     ctx.save(); ctx.globalAlpha = out;
     // light bloom
     const g = ctx.createRadialGradient(540, 860, 10, 540, 860, 520);
-    g.addColorStop(0, `rgba(255,236,170,${.45 * (1 - lt / 1.5)})`); g.addColorStop(1, 'rgba(255,236,170,0)');
+    g.addColorStop(0, `rgba(255,236,170,${.45 * (1 - lt / life)})`); g.addColorStop(1, 'rgba(255,236,170,0)');
     ctx.fillStyle = g; ctx.fillRect(0, 300, W, 1150);
     // rings
     for (let k = 0; k < 3; k++) { const rr2 = 120 + easeOut((lt - k * .08) / .9) * 360; ctx.globalAlpha = out * clamp(1 - (lt - k * .08) / 1.1) * .8;
@@ -178,7 +181,7 @@ function aseStamp(t) {
     ctx.globalAlpha = out;
     // beads burst
     for (let k = 0; k < 18; k++) { const a = k * Math.PI * 2 / 18 + .2, d = 150 + easeOut(lt / .7) * 260;
-      ctx.beginPath(); ctx.arc(540 + Math.cos(a) * d, 860 + Math.sin(a) * d * .85, 10 * (1 - lt / 1.5) + 2, 0, 7); ctx.fillStyle = k % 2 ? C.leaf : C.yellow; ctx.fill(); }
+      ctx.beginPath(); ctx.arc(540 + Math.cos(a) * d, 860 + Math.sin(a) * d * .85, 10 * (1 - lt / life) + 2, 0, 7); ctx.fillStyle = k % 2 ? C.leaf : C.yellow; ctx.fill(); }
     ctx.translate(540, 860); ctx.rotate(-.07); ctx.scale(inn, inn);
     ctx.font = `900 190px ${SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
     ctx.lineWidth = 22; ctx.strokeStyle = C.deep; ctx.strokeText('ÀṢẸ', 0, 0);
@@ -301,7 +304,7 @@ window.drawFrame = (t) => {
 window.setFrame = (url) => new Promise(r => { const im = new Image(); im.onload = () => { FRAME = im; r(); }; im.src = url; });
 window.init = async (edit, logoURL) => {
   E = edit; SRC = edit.src_dur; TOT = SRC + edit.outro; LINES = edit.lines;
-  ASE = edit.ase; buildCTA();
+  ASE = edit.ase.map(a => a - .05); buildCTA();
   await document.fonts.load(`900 80px "Inter Display"`); await document.fonts.load(`700 40px "Inter Display"`); await document.fonts.load(`40px "Noto Color Emoji"`);
   LOGO = await new Promise(r => { const im = new Image(); im.onload = () => r(im); im.src = logoURL; });
   return TOT;
