@@ -24,7 +24,8 @@ const fs = require('fs'), path = require('path'), { spawn } = require('child_pro
       '-c:v', 'libx264', '-preset', 'medium', '-crf', '17', '-pix_fmt', 'yuv420p', path.join(D, process.env.OUT_NAME || 'reel_noaudio.mp4')], { stdio: ['pipe', 'inherit', 'inherit'] });
     const N = Math.round(TOT * FPS);
     const I0 = parseInt(process.env.START_FRAME || '0');
-    for (let i = I0; i < N; i++) {
+    const I1 = Math.min(N, parseInt(process.env.END_FRAME || String(N)));
+    for (let i = I0; i < I1; i++) {
       const buf = await grab(i / FPS);
       if (!ff.stdin.write(buf)) await new Promise(r => ff.stdin.once('drain', r));
       if (i % 300 === 0) console.log(`frame ${i}/${N}`);
