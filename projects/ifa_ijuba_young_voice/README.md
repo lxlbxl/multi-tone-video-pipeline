@@ -4,7 +4,7 @@ The girl's ìjúbà (homage chant), pulled out of a 3-part screen recording of a
 (@yorubachic quoting @MooAkee, carrying a FAMSTARZZS watermark), then upscaled and edited for ifa.ng.
 Credit the original posters in the post caption.
 
-- `edit.json`: 11 homage sections (Olódùmarè, Ilẹ̀, Ayé, Ẹ̀là, Ọ̀rúnmìlà, Agbọnnìrègún, Ìyá mi, Èṣù, Ọbàtálá, Ọ̀ṣun, Ṣàngó), ÀṢẸ onsets, and caption lines
+- `edit.json`: 11 homage sections (Olódùmarè, Ilẹ̀, Ayé, Ẹ̀là, Ọ̀rúnmìlà, Agbọnnìrègún, Ìyá mi, Odù, Ọbàtálá, Ọ̀ṣun, Ṣàngó), ÀṢẸ onsets, and caption lines
   `[start, end, text, [[word_start, word_end], …]]`. **Edit this** to correct captions.
 - `vad.json` + `segtext.json`: the timing source. `vad.json` holds 113 voice-activity phrase segments measured from the audio, and `segtext.json` holds the Yoruba transcribed per segment.
   Captions, section starts and ÀṢẸ stamps all come from these, so they land on real phrase onsets.
