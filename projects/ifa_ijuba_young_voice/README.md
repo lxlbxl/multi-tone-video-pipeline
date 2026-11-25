@@ -4,9 +4,13 @@ The girl's ìjúbà (homage chant), pulled out of a 3-part screen recording of a
 (@yorubachic quoting @MooAkee, carrying a FAMSTARZZS watermark), then upscaled and edited for ifa.ng.
 Credit the original posters in the post caption.
 
-- `edit.json`: 10 homage sections (Olódùmarè → Ṣàngó), Yoruba caption lines + timings. **Edit this** to correct captions.
+- `edit.json`: 11 homage sections (Olódùmarè, Ilẹ̀, Ayé, Ẹ̀là, Ọ̀rúnmìlà, Agbọnnìrègún, Ìyá mi, Èṣù, Ọbàtálá, Ọ̀ṣun, Ṣàngó), ÀṢẸ onsets, and caption lines
+  `[start, end, text, [[word_start, word_end], …]]`. **Edit this** to correct captions.
+- `vad.json` + `segtext.json`: the timing source. `vad.json` holds 113 voice-activity phrase segments measured from the audio, and `segtext.json` holds the Yoruba transcribed per segment.
+  Captions, section starts and ÀṢẸ stamps all come from these, so they land on real phrase onsets.
 - `reel.html`: overlays: header with 10-bead section tracker, deity title cards, karaoke captions,
-  ÀṢẸ stamp on every "Àṣẹ", hook, outro CTA, logo.
+  ÀṢẸ stamp on every "Àṣẹ", kinetic CTA band under the video (cycles Comment / Share / Follow / Save,
+  switches to "Type ÀṢẸ 👇🏾" after each ÀṢẸ), hook, outro CTA, logo.
 - `render.js`: `node render.js <dir> preview 13.3 70.5` / `node render.js <dir> full`
   (`START_FRAME` / `END_FRAME` / `OUT_NAME` env vars split the render across parallel workers).
 - `mix_sfx.py <edit.json> <out.wav>`: synthesised pad + whooshes + ÀṢẸ chimes.

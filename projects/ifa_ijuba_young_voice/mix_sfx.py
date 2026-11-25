@@ -24,7 +24,7 @@ for s in []:
     if s['kind']=='orisha': add(ding(784),s['t'],0.12); add(ding(1175),s['t']+.08,0.06)
     else: add(pop(),s['t'],0.35); add(ding(1046,.8,2),s['t']+.04,0.12)
 add(ding(1318,1.0,1),0.25,0.08); add(pop(),0.2,0.25)
-ASE=[l[0] for l in E['lines'] if l[2].startswith('Àṣẹ')]
+ASE=E['ase']
 for a in ASE:
     tt=np.arange(int(.5*sr))/sr; add(np.sin(2*np.pi*(55+40*np.exp(-tt*12))*tt)*np.exp(-tt*7),a,0.30); add(ding(880,1.4),a+.02,0.10); add(ding(1318.5,1.2,1),a+.06,0.06)
 for i,f in enumerate([587.3,740,880,1174.7]): add(ding(f,2.0),SRC+0.3+i*0.12,0.1)

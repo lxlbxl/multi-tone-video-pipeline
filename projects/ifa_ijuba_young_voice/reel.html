@@ -33,6 +33,11 @@ function icon(name, s, col) {
   switch (name) {
     case 'sun': ctx.beginPath(); ctx.arc(0, 0, 11, 0, 7); ctx.fill(); for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; ctx.beginPath(); ctx.moveTo(Math.cos(a)*17, Math.sin(a)*17); ctx.lineTo(Math.cos(a)*27, Math.sin(a)*27); ctx.stroke(); } break;
     case 'earth': ctx.beginPath(); ctx.moveTo(-28, 18); ctx.quadraticCurveTo(-12, -22, 4, 6); ctx.quadraticCurveTo(14, -12, 28, 18); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(-30, 22); ctx.lineTo(30, 22); ctx.stroke(); break;
+    case 'world': ctx.beginPath(); ctx.arc(0, 0, 24, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.ellipse(0, 0, 11, 24, 0, 0, 7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-24, 0); ctx.lineTo(24, 0); ctx.moveTo(-20, -12); ctx.lineTo(20, -12); ctx.moveTo(-20, 12); ctx.lineTo(20, 12); ctx.stroke(); break;
+    case 'ikin': for (const [x, y] of [[-12, -10], [10, -12], [0, 4], [-14, 12], [13, 12]]) { ctx.beginPath(); ctx.ellipse(x, y, 8, 6.5, .3, 0, 7); ctx.fill(); } break;
+    case 'cross': ctx.beginPath(); ctx.moveTo(-26, 0); ctx.lineTo(26, 0); ctx.moveTo(0, -26); ctx.lineTo(0, 26); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 0, 8, 12, 0, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(0, 7); ctx.stroke(); break;
     case 'tree': ctx.fillRect(-3, -2, 6, 28); ctx.beginPath(); ctx.arc(0, -10, 16, 0, 7); ctx.arc(-13, -2, 10, 0, 7); ctx.arc(13, -2, 10, 0, 7); ctx.fill(); break;
     case 'opon': ctx.beginPath(); ctx.arc(0, 0, 25, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, 18, 0, 7); ctx.stroke();
       ctx.lineWidth = 3; for (let r = 0; r < 3; r++) { ctx.beginPath(); ctx.moveTo(-6, -9 + r*9); ctx.lineTo(-6, -4 + r*9); ctx.moveTo(4, -9 + r*9); ctx.lineTo(4, -4 + r*9); ctx.moveTo(8, -9 + r*9); ctx.lineTo(8, -4 + r*9); ctx.stroke(); } break;
@@ -61,15 +66,16 @@ function header(t) {
   ctx.font = `800 25px ${SANS}`; ctx.fillStyle = C.goldD; ctx.fillText('✦  ÌJÚBÀ · SACRED HOMAGE CHANT', x + 58, y + 50);
   ctx.font = `900 56px ${SANS}`; ctx.fillStyle = C.green; ctx.fillText('Ìbà o! A young voice 🙏🏾', x + 56, y + 110);
   // section tracker: 10 beads, current one glows
-  const k = t < SRC ? secIdx(t) : 9;
-  for (let i = 0; i < 10; i++) {
-    const bx = x + 70 + i * 40, by = y + 150, cur = i === k, done = i < k;
+  const k = t < SRC ? secIdx(t) : E.sections.length - 1;
+  const NS = E.sections.length;
+  for (let i = 0; i < NS; i++) {
+    const bx = x + 70 + i * 36, by = y + 150, cur = i === k, done = i < k;
     ctx.beginPath(); ctx.arc(bx, by, cur ? 12 : 9, 0, 7);
     ctx.fillStyle = cur ? C.yellow : done ? C.leaf : '#e2e6dc'; ctx.fill();
     if (cur) { ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(242,194,48,.45)'; ctx.beginPath(); ctx.arc(bx, by, 18 + 3 * Math.sin(t * 5), 0, 7); ctx.stroke(); }
   }
   ctx.font = `600 26px ${SANS}`; ctx.fillStyle = '#6a7560';
-  ctx.fillText(`${Math.min(10, k + 1)} / 10  ·  ${E.sections[k].name}`, x + 480, y + 159);
+  ctx.fillText(`${k + 1} / ${NS}  ·  ${E.sections[k].name}`, x + 490, y + 159);
   ctx.restore();
   if (LOGO) {
     const lw = 160, lh = lw * LOGO.height / LOGO.width, cx = 935, cy = 163;
@@ -130,12 +136,11 @@ function captions(t) {
   rr(PL.x + 36, PL.y + PL.h - 22, Math.max(7, (PL.w - 72) * p), 7, 3.5); ctx.fillStyle = pg; ctx.fill();
   const li = lineIdx(t);
   if (li >= 0 && t < SRC + .1) {
-    const [st0, en, yo] = LINES[li], st = st0 - .06, lt = t - st, dur = en - st;
+    const [st0, en, yo, wtimes] = LINES[li], st = st0 - .06, lt = t - st;
     const words = yo.split(' ');
     let size = 64; ctx.font = `900 ${size}px ${SANS}`; let rows = wrap(words, 920);
     while (rows.length > 2 && size > 44) { size -= 4; ctx.font = `900 ${size}px ${SANS}`; rows = wrap(words, 920); }
-    const tot = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0;
-    const wt = words.map(w => { const s = acc; acc += (w.length + 2) / tot * dur * .9; return [s, acc]; });
+    const wt = wtimes.map(([a, b]) => [a - st - .04, b - st - .04]);
     const lineH = size * 1.13, top = PL.y + 80 - (rows.length - 1) * lineH / 2, pop = back(lt / .25);
     const sp = ctx.measureText(' ').width; let wi = 0;
     ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
@@ -181,6 +186,64 @@ function aseStamp(t) {
     ctx.fillStyle = tg; ctx.fillText('ÀṢẸ', 0, 0);
     ctx.restore();
   }
+}
+
+
+// ---------- kinetic CTA in the empty band under the video (kept above the app's caption/UI zone) ----------
+const CTAS = [
+  { ico: '💬', a: 'Comment', b: 'ÀṢẸ', c: 'if you feel it' },
+  { ico: '🔁', a: 'Share', b: 'to keep', c: 'the tradition alive' },
+  { ico: '➕', a: 'Follow', b: 'ifa.ng', c: 'for more Ifá' },
+  { ico: '🔖', a: 'Save', b: 'this ìjúbà', c: 'learn it by heart' },
+];
+let CTA_SCHED = [];
+function buildCTA() {
+  const HOT = { ico: '👇🏾', a: 'Type', b: 'ÀṢẸ', c: 'in the comments', hot: true };
+  const hot = ASE.map(a => [a + .6, a + 3.8]); let t = 4.0, k = 0;
+  for (const [hs, he] of hot.concat([[SRC, SRC]])) {
+    while (hs - t >= 2.8) { const e = Math.min(t + 7, hs); if (hs - e < 2.8 && hs - e > 0) { CTA_SCHED.push({ s: t, e: hs, item: CTAS[k++ % CTAS.length] }); t = hs; break; } CTA_SCHED.push({ s: t, e, item: CTAS[k++ % CTAS.length] }); t = e; }
+    if (hs < SRC) { CTA_SCHED.push({ s: Math.max(t, hs), e: he, item: HOT }); t = he; }
+  }
+}
+function bottomCTA(t) {
+  if (t < 4.0 || t >= SRC) return;
+  // after every ÀṢẸ, the CTA answers with "Type ÀṢẸ 👇🏾" for ~3.2s; otherwise cycle CTAS every 7s
+  let slot = null; for (const sl of CTA_SCHED) if (t >= sl.s && t < sl.e) { slot = sl; break; }
+  if (!slot) return;
+  const item = slot.item, t0 = slot.s;
+  const lt = t - t0, cycle = slot.e - slot.s;
+  const out = clamp((cycle - lt) / .3);
+  const y = 1548, h = 84;
+  ctx.save(); ctx.font = `800 38px ${SANS}`;
+  const parts = [item.a, item.b, item.c];
+  const ws = parts.map((p, i) => { ctx.font = i === 1 ? `900 40px ${SANS}` : `700 36px ${SANS}`; return ctx.measureText(p).width; });
+  const w = 110 + ws.reduce((a, b) => a + b, 0) + 2 * 16 + 30;
+  const grow = easeOut(lt / .45), x = 540 - w * grow / 2;
+  ctx.globalAlpha = out;
+  // pill
+  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 6;
+  rr(x, y, Math.max(h, w * grow), h, h / 2); ctx.fillStyle = item.hot ? C.yellow : 'rgba(255,255,255,.95)'; ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.save(); rr(x, y, Math.max(h, w * grow), h, h / 2); ctx.clip();
+  // shine sweep
+  const sx = x - 200 + ((lt * 520) % (w + 400));
+  const sg = ctx.createLinearGradient(sx, 0, sx + 140, 0); sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(.5, 'rgba(255,255,255,.55)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sg; ctx.fillRect(x, y, w, h);
+  // icon bubble with bounce
+  const bnc = Math.abs(Math.sin(lt * 4.2)) * 6 * (1 - clamp(lt / 3));
+  ctx.beginPath(); ctx.arc(x + 44, y + h / 2, 32, 0, 7); ctx.fillStyle = item.hot ? '#fff' : C.green; ctx.fill();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `34px ${SANS}`; ctx.fillText(item.ico, x + 44, y + h / 2 + 2 - bnc);
+  // words slide up one by one
+  let cx = x + 96;
+  parts.forEach((p, i) => {
+    const pp = easeOut((lt - .25 - i * .16) / .35);
+    ctx.globalAlpha = out * pp; ctx.textAlign = 'left';
+    ctx.font = i === 1 ? `900 40px ${SANS}` : `700 36px ${SANS}`;
+    ctx.fillStyle = i === 1 ? (item.hot ? C.deep : C.green) : (item.hot ? C.deep : '#3d4a36');
+    ctx.fillText(p, cx, y + h / 2 + 2 + (1 - pp) * 26);
+    if (i === 1 && pp > .5) { ctx.fillStyle = item.hot ? C.deep : C.yellow; ctx.fillRect(cx, y + h / 2 + 24, ws[i] * easeOut((lt - .6) / .4), 4); }
+    cx += ws[i] + 16;
+  });
+  ctx.restore(); ctx.restore();
 }
 
 // ---------- hook ----------
@@ -232,12 +295,13 @@ window.drawFrame = (t) => {
   hook(t);
   aseStamp(t);
   captions(t);
+  bottomCTA(t);
   outro(t);
 };
 window.setFrame = (url) => new Promise(r => { const im = new Image(); im.onload = () => { FRAME = im; r(); }; im.src = url; });
 window.init = async (edit, logoURL) => {
   E = edit; SRC = edit.src_dur; TOT = SRC + edit.outro; LINES = edit.lines;
-  ASE = LINES.filter(l => l[2].startsWith('Àṣẹ')).map(l => l[0]);
+  ASE = edit.ase; buildCTA();
   await document.fonts.load(`900 80px "Inter Display"`); await document.fonts.load(`700 40px "Inter Display"`); await document.fonts.load(`40px "Noto Color Emoji"`);
   LOGO = await new Promise(r => { const im = new Image(); im.onload = () => r(im); im.src = logoURL; });
   return TOT;
