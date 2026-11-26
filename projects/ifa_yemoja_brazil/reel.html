@@ -1,0 +1,381 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#000}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+const W = 1080, H = 1920, CX = 540;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let E = null, LOGO = null, FRAME = null, LINES = [], Q = {}, TOT = 73.5;
+const C = { green: '#0f5a24', leaf: '#3f8a2a', yellow: '#f2c230', gold: '#e9b824', deep: '#062d18', sea: '#0b3d91', aqua: '#3fd0ff', white: '#fff', red: '#e23b3b' };
+const SANS = '"Inter Display", Inter, "Noto Color Emoji", sans-serif';
+const SERIF = '"DejaVu Serif", Georgia, serif';
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const eo = x => 1 - Math.pow(1 - clamp(x), 3);
+const eio = x => { x = clamp(x); return x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3)/2; };
+const back = x => { x = clamp(x); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3*Math.pow(x - 1, 3) + c1*Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = .3, fo = .3) => clamp((t - a) / fi) * clamp((b - t) / fo);
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function rng(s) { return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function bigText(txt, x, y, size, fill, opts = {}) {
+  ctx.save(); ctx.font = `${opts.weight || 900} ${size}px ${opts.font || SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  if (opts.stroke !== false) { ctx.lineWidth = opts.lw || size * .16; ctx.strokeStyle = opts.strokeColor || 'rgba(0,0,0,.85)'; ctx.strokeText(txt, x, y); }
+  if (opts.glow) { ctx.shadowColor = opts.glow; ctx.shadowBlur = size * .5; }
+  ctx.fillStyle = fill; ctx.fillText(txt, x, y); ctx.restore();
+}
+function fitSize(txt, size, maxW, weight = 900, font = SANS) { ctx.font = `${weight} ${size}px ${font}`; const w = ctx.measureText(txt).width; return w > maxW ? size * maxW / w : size; }
+
+// ---------- base footage with punch-zooms, shake, desaturation, flashes ----------
+function punch(t, at, amt = .08, dur = .5) { const lt = t - at; return lt < 0 || lt > dur ? 0 : amt * (1 - eo(lt / dur)); }
+function shake(t, at, amt = 18, dur = .45) { const lt = t - at; if (lt < 0 || lt > dur) return [0, 0]; const k = (1 - lt / dur) * amt; return [Math.sin(lt * 90) * k, Math.cos(lt * 77) * k]; }
+function base(t) {
+  if (!FRAME) return;
+  let z = 1.0 + .02 * Math.sin(t * .35);
+  for (const c of ['brazil', 'yemoja1', 'today', 'proud', 'ase']) z += punch(t, Q[c], c === 'ase' ? .12 : .08);
+  if (t >= E.replay_start && t < 69.3) z += .06 * clamp((t - E.replay_start) / 17);           // slow push during replay
+  let [sx, sy] = shake(t, Q.brazil); const [ax, ay] = shake(t, Q.ase, 26, .6); sx += ax; sy += ay;
+  const desat = win(t, 29.35, 38.55, .6, .2);
+  const endBlur = clamp((t - 69.3) / .6);
+  const f = [];
+  if (desat > 0) f.push(`grayscale(${desat}) contrast(${1 + .15 * desat}) brightness(${1 - .12 * desat})`);
+  if (endBlur > 0) f.push(`blur(${endBlur * 22}px) brightness(${1 - .45 * endBlur})`);
+  ctx.save(); ctx.filter = f.length ? f.join(' ') : 'none';
+  ctx.translate(CX + sx, 900 + sy); ctx.scale(z, z); ctx.translate(-CX, -900);
+  ctx.drawImage(FRAME, -10, -10, W + 20, H + 20); ctx.restore();
+  // cinematic vignette + bottom fade for captions
+  const g = ctx.createRadialGradient(CX, 860, 420, CX, 960, 1250); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(0,0,0,${.45 + .25 * desat})`);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const b = ctx.createLinearGradient(0, 1250, 0, 1920); b.addColorStop(0, 'rgba(0,0,0,0)'); b.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = b; ctx.fillRect(0, 1250, W, 670);
+  // flashes
+  for (const [at, a] of [[Q.brazil, .7], [Q.today - .25, .85], [Q.ase, .8], [Q.yemoja1, .45]]) { const lt = t - at; if (lt >= 0 && lt < .35) { ctx.fillStyle = `rgba(255,255,255,${a * (1 - lt / .35)})`; ctx.fillRect(0, 0, W, H); } }
+}
+
+// gold dust particles
+const PR = rng(5), DUST = Array.from({ length: 70 }, () => ({ x: PR() * W, y: PR() * H, r: 1 + PR() * 3, sp: 15 + PR() * 40, ph: PR() * 6.28 }));
+function dust(t, amt) {
+  if (amt <= 0) return;
+  for (const p of DUST) {
+    const y = ((p.y - t * p.sp) % H + H) % H, x = p.x + Math.sin(t + p.ph) * 25;
+    ctx.beginPath(); ctx.arc(x, y, p.r, 0, 7); ctx.fillStyle = `rgba(255,220,120,${amt * (.25 + .35 * Math.sin(t * 2 + p.ph) ** 2)})`; ctx.fill();
+  }
+}
+
+// ---------- M1 hook ----------
+function hook(t) {
+  // "THIS IS NOT LAGOS 👀"
+  const a = win(t, .3, Q.brazil - .55, .25, .2);
+  if (a > 0) {
+    ctx.save(); ctx.globalAlpha = a;
+    const s = .8 + .2 * back((t - .3) / .4);
+    ctx.translate(CX, 760); ctx.scale(s, s);
+    bigText('THIS IS NOT', 0, -95, 70, '#fff');
+    bigText('LAGOS 👀', 0, 20, 150, C.yellow);
+    const st = eo((t - 2.0) / .35);   // strike-through
+    if (st > 0) { ctx.strokeStyle = C.red; ctx.lineWidth = 18; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-300, 30); ctx.lineTo(-300 + 520 * st, 10); ctx.stroke(); }
+    ctx.restore();
+  }
+  // "THIS IS BRAZIL 🇧🇷" slam
+  const b = win(t, Q.brazil - .5, 4.9, .15, .35);
+  if (b > 0) {
+    ctx.save(); ctx.globalAlpha = b;
+    const s = t < Q.brazil ? .9 : 1.25 - .25 * eo((t - Q.brazil) / .3);
+    ctx.translate(CX, 760); ctx.rotate(-.04); ctx.scale(s, s);
+    bigText('THIS IS', 0, -110, 76, '#fff');
+    if (t >= Q.brazil - .05) {
+      const g = ctx.createLinearGradient(0, -60, 0, 80); g.addColorStop(0, '#3fd16b'); g.addColorStop(.55, '#ffd84a'); g.addColorStop(1, '#2fa04f');
+      bigText('BRAZIL', 0, 20, 190, g, { glow: 'rgba(255,216,74,.5)' });
+      ctx.font = `120px ${SANS}`; ctx.textAlign = 'center'; ctx.fillText('🇧🇷', 0, 165);
+    }
+    ctx.restore();
+  }
+}
+
+// ---------- M2 YEMỌJA reveal ----------
+function yemoja(t) {
+  const t0 = Q.yemoja1 - .1, a = win(t, t0, 14.6, .2, .45);
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  const cy = 700;
+  // ripples
+  for (let k = 0; k < 4; k++) { const lt = t - t0 - k * .35; if (lt < 0) continue; const r = 60 + eo(lt / 2.2) * 520;
+    ctx.globalAlpha = a * clamp(1 - lt / 2.2) * .8; ctx.strokeStyle = k % 2 ? '#fff' : C.aqua; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(CX, cy, r, r * .32, 0, 0, 7); ctx.stroke(); }
+  ctx.globalAlpha = a;
+  const word = 'YEMỌJA', size = 196; ctx.font = `900 ${size}px ${SANS}`;
+  const tw = ctx.measureText(word).width; let x = CX - tw / 2;
+  const g = ctx.createLinearGradient(0, cy - 100, 0, cy + 100); g.addColorStop(0, '#e9fbff'); g.addColorStop(.45, C.aqua); g.addColorStop(1, '#1257c9');
+  for (let i = 0; i < word.length; i++) {
+    const ch = word[i], cw = ctx.measureText(ch).width, lt = t - t0 - i * .07, p = back(lt / .45);
+    if (lt > 0) {
+      ctx.save(); ctx.translate(x + cw / 2, cy + (1 - p) * 90 + Math.sin(t * 2.4 + i) * 6); ctx.globalAlpha = a * clamp(lt / .2);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+      ctx.lineWidth = 22; ctx.strokeStyle = 'rgba(3,20,60,.9)'; ctx.strokeText(ch, 0, 0);
+      ctx.shadowColor = 'rgba(63,208,255,.8)'; ctx.shadowBlur = 40; ctx.fillStyle = g; ctx.fillText(ch, 0, 0);
+      ctx.restore();
+    }
+    x += cw;
+  }
+  // OUR GODDESS chip
+  const c = back((t - Q.our) / .4);
+  if (t > Q.our) { ctx.save(); ctx.translate(CX, cy - 175); ctx.scale(c, c); ctx.rotate(-.05);
+    rr(-215, -42, 430, 84, 42); ctx.fillStyle = C.yellow; ctx.fill();
+    ctx.font = `900 46px ${SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = C.deep; ctx.fillText('OUR GODDESS 🌊', 0, 3); ctx.restore(); }
+  // etymology line
+  const e = eo((t - 12.0) / .5);
+  if (e > 0) { ctx.save(); ctx.globalAlpha = a * e; ctx.translate(CX, cy + 160 + (1 - e) * 20);
+    rr(-430, -62, 860, 124, 30); ctx.fillStyle = 'rgba(3,20,60,.78)'; ctx.fill();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `800 44px ${SANS}`; ctx.fillStyle = '#fff'; ctx.fillText('Yèyé ọmọ ẹja', 0, -20);
+    ctx.font = `500 30px ${SANS}`; ctx.fillStyle = '#bfe9ff'; ctx.fillText('"mother whose children are the fish"', 0, 26); ctx.restore(); }
+  ctx.restore();
+}
+
+// ---------- M3 Atlantic map ----------
+function blob(pts, fill) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length]; ctx.quadraticCurveTo(p[0], p[1], (p[0] + q[0]) / 2, (p[1] + q[1]) / 2); } ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); }
+function mapPanel(t) {
+  const a = win(t, 15.1, 29.0, .4, .4);
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  const px = 60, py = 340, pw = 960, ph = 800, s = .92 + .08 * eo((t - 15.1) / .5);
+  ctx.translate(CX, py + ph / 2); ctx.scale(s, s); ctx.translate(-CX, -(py + ph / 2));
+  ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 40;
+  rr(px, py, pw, ph, 40); const og = ctx.createLinearGradient(0, py, 0, py + ph); og.addColorStop(0, 'rgba(6,30,80,.93)'); og.addColorStop(1, 'rgba(3,15,45,.95)'); ctx.fillStyle = og; ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.save(); rr(px, py, pw, ph, 40); ctx.clip();
+  // ocean waves
+  ctx.strokeStyle = 'rgba(120,190,255,.12)'; ctx.lineWidth = 2;
+  for (let y = py + 60; y < py + ph; y += 46) { ctx.beginPath(); for (let x = px; x <= px + pw; x += 12) { const yy = y + Math.sin(x / 40 + t * 1.5 + y) * 5; x === px ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy); } ctx.stroke(); }
+  // South America (left) and Africa (right), stylised
+  ctx.save(); ctx.translate(0, 90); blob([[60, 330], [250, 300], [330, 420], [360, 560], [300, 700], [220, 860], [150, 1060], [90, 1070], [60, 900]], '#1d6b3a');
+  blob([[700, 290], [880, 270], [1030, 320], [1030, 640], [960, 760], [900, 1000], [840, 1060], [800, 900], [760, 640], [690, 540], [640, 430], [660, 330]], '#2a7d44'); ctx.restore();
+  ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.font = `800 30px ${SANS}`; ctx.textAlign = 'center';
+  ctx.fillText('A T L A N T I C', 500, 730);
+  ctx.restore();
+  // pins
+  const NG = [790, 610], BR = [300, 730];
+  function pin(p, label, flag, at, side) {
+    const k = back((t - at) / .45); if (t < at) return;
+    ctx.save(); ctx.translate(p[0], p[1]); ctx.scale(k, k);
+    ctx.beginPath(); ctx.arc(0, 0, 16, 0, 7); ctx.fillStyle = C.yellow; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = '#fff'; ctx.stroke();
+    const pr = 16 + ((t * 40) % 30); ctx.beginPath(); ctx.arc(0, 0, pr, 0, 7); ctx.strokeStyle = `rgba(242,194,48,${1 - (pr - 16) / 30})`; ctx.lineWidth = 3; ctx.stroke();
+    ctx.font = `800 38px ${SANS}`; const lw = ctx.measureText(label).width + 90;
+    const lx = side > 0 ? 30 : -lw / 2, ly = side > 0 ? -100 : 34;
+    rr(lx, ly, lw, 70, 35); ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.fillStyle = C.deep; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(flag + ' ' + label, lx + 20, ly + 36);
+    ctx.restore();
+  }
+  pin(NG, 'Ògùn River', '🇳🇬', Q.ogun - .2, -1);
+  // crossing arc
+  const p0 = NG, p1 = BR, cp = [560, 450];
+  const prog = eio((t - 19.9) / 3.6);
+  if (prog > 0) {
+    ctx.setLineDash([4, 18]); ctx.lineCap = 'round'; ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    ctx.beginPath(); ctx.moveTo(p0[0], p0[1]);
+    const N = 60; for (let i = 1; i <= N * prog; i++) { const u = i / N; ctx.lineTo((1 - u) ** 2 * p0[0] + 2 * (1 - u) * u * cp[0] + u * u * p1[0], (1 - u) ** 2 * p0[1] + 2 * (1 - u) * u * cp[1] + u * u * p1[1]); }
+    ctx.stroke(); ctx.setLineDash([]);
+    const u = prog, bx = (1 - u) ** 2 * p0[0] + 2 * (1 - u) * u * cp[0] + u * u * p1[0], by = (1 - u) ** 2 * p0[1] + 2 * (1 - u) * u * cp[1] + u * u * p1[1];
+    if (prog < 1) { ctx.font = `64px ${SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('⛵', bx, by - 10 + Math.sin(t * 6) * 4); }
+  }
+  pin(BR, 'Bahia, Brazil', '🇧🇷', 23.5, 1);
+  // glowing "she came with them" drop travelling the arc again
+  const g2 = eio((t - Q.carried2) / 2.2);
+  if (t > Q.carried2 && g2 < 1) { const u = g2, x = (1 - u) ** 2 * p0[0] + 2 * (1 - u) * u * cp[0] + u * u * p1[0], y = (1 - u) ** 2 * p0[1] + 2 * (1 - u) * u * cp[1] + u * u * p1[1];
+    const gg = ctx.createRadialGradient(x, y, 2, x, y, 60); gg.addColorStop(0, 'rgba(160,235,255,1)'); gg.addColorStop(1, 'rgba(63,208,255,0)'); ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, y, 60, 0, 7); ctx.fill();
+    ctx.font = `52px ${SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('💧', x, y); }
+  // songs / prayers chips
+  const chips = [['🎶 In their songs', 26.0], ['🙏🏾 In their prayers', 27.35]];
+  chips.forEach(([txt, at], i) => { if (t < at) return; const k = back((t - at) / .4);
+    ctx.save(); ctx.translate(CX, py + ph - 150 + i * 80); ctx.scale(k, k);
+    ctx.font = `800 40px ${SANS}`; const w = ctx.measureText(txt).width + 70; rr(-w / 2, -34, w, 68, 34); ctx.fillStyle = i ? C.yellow : '#fff'; ctx.fill();
+    ctx.fillStyle = C.deep; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, 0, 2); ctx.restore(); });
+  // title
+  ctx.font = `900 40px ${SANS}`; ctx.fillStyle = C.yellow; ctx.textAlign = 'left'; ctx.fillText('HOW SHE CROSSED THE OCEAN', px + 40, py + 70);
+  ctx.restore();
+}
+
+// ---------- M4 quote card (black & white) ----------
+function quote(t) {
+  const a = win(t, 29.5, 38.4, .5, .25);
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  const rows = [['They lost their names.', 29.65], ['Their land.', 31.37], ['Almost everything.', 32.57]];
+  const dim = 1 - .55 * eo((t - 34.8) / .5);
+  rows.forEach(([txt, at], i) => { const k = eo((t - at) / .5); if (k <= 0) return;
+    ctx.save(); ctx.globalAlpha = a * k * dim; bigText(txt, CX, 560 + i * 110 + (1 - k) * 20, 68, '#fff', { font: SERIF, weight: 'italic 700', lw: 8 }); ctx.restore(); });
+  const k2 = eo((t - Q.never + .45) / .6);
+  if (k2 > 0) { ctx.save(); ctx.globalAlpha = a * k2; const s = .94 + .06 * k2;
+    ctx.translate(CX, 1010); ctx.scale(s, s);
+    bigText('But they never', 0, -10, 82, '#fff', { lw: 12 });
+    const g = ctx.createLinearGradient(0, 60, 0, 170); g.addColorStop(0, '#ffe58a'); g.addColorStop(1, '#e0a516');
+    bigText('let go of Yemọja.', 0, 100, 96, g, { lw: 14, glow: 'rgba(255,200,60,.55)' });
+    ctx.restore(); }
+  // shareable signature
+  ctx.globalAlpha = a * .8; ctx.font = `700 30px ${SANS}`; ctx.fillStyle = '#ddd'; ctx.textAlign = 'center'; ctx.fillText('— ifa.ng', CX, 1250);
+  ctx.restore();
+}
+
+// ---------- M5 AND TODAY + Iemanjá = Yemọja ----------
+function today(t) {
+  const a = win(t, Q.today - .15, 41.3, .15, .3);
+  if (a > 0) { ctx.save(); ctx.globalAlpha = a; const s = back((t - Q.today + .15) / .4); ctx.translate(CX, 720); ctx.scale(s, s); ctx.rotate(.04);
+    bigText('AND TODAY? 🎉', 0, 0, 120, C.yellow, { glow: 'rgba(242,194,48,.5)' }); ctx.restore(); }
+  const b = win(t, 41.4, 47.4, .3, .4);
+  if (b > 0) {
+    ctx.save(); ctx.globalAlpha = b;
+    const items = [['Iemanjá', '🇧🇷', -1, 41.5], ['Yemọja', '🇳🇬', 1, 42.4]];
+    for (const [name, flag, side, at] of items) {
+      const k = eo((t - at) / .45); if (k <= 0) continue;
+      ctx.save(); ctx.translate(CX + side * (230 + (1 - k) * 200), 700); ctx.globalAlpha = b * k;
+      rr(-205, -120, 410, 240, 40); ctx.fillStyle = side < 0 ? 'rgba(20,120,60,.92)' : 'rgba(10,60,150,.92)'; ctx.fill();
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+      ctx.font = `90px ${SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(flag, 0, -45);
+      ctx.font = `900 64px ${SANS}`; ctx.fillStyle = '#fff'; ctx.fillText(name, 0, 60);
+      ctx.restore();
+    }
+    const e = back((t - 43.1) / .4);
+    if (t > 43.1) { ctx.save(); ctx.translate(CX, 700); ctx.scale(e * (1 + .06 * Math.sin(t * 8)), e * (1 + .06 * Math.sin(t * 8)));
+      ctx.beginPath(); ctx.arc(0, 0, 58, 0, 7); ctx.fillStyle = C.yellow; ctx.fill(); bigText('=', 0, 4, 90, C.deep, { stroke: false }); ctx.restore(); }
+    const s = eo((t - 43.9) / .5);
+    if (s > 0) { ctx.save(); ctx.globalAlpha = b * s; bigText('Same mother. Same waters. Same roots.', CX, 900 + (1 - s) * 20, fitSize('Same mother. Same waters. Same roots.', 50, 960, 800), '#fff', { weight: 800, lw: 8 }); ctx.restore(); }
+    ctx.restore();
+  }
+}
+
+// ---------- M6 the call ----------
+function call(t) {
+  // rhetorical question
+  const a = win(t, 48.9, 54.9, .3, .3);
+  if (a > 0) {
+    ctx.save(); ctx.globalAlpha = a;
+    const k1 = eo((t - 49.0) / .5);
+    ctx.globalAlpha = a * k1 * (t > 52.7 ? .55 : 1);
+    bigText('If the world celebrates', CX, 600, 72, '#fff', { lw: 11 });
+    bigText('our heritage THIS loudly…', CX, 690, 72, C.yellow, { lw: 11 });
+    if (t > 52.8) {
+      const lt = t - 52.8; ctx.globalAlpha = a;
+      bigText('…why should we', CX, 830, 70, '#fff', { lw: 10 });
+      // WHISPER: shrinks small, then pops back huge
+      const sz = lt < .9 ? 120 - 80 * eo(lt / .5) : 40 + 110 * back((lt - .9) / .4);
+      bigText('WHISPER', CX, 950, sz, '#fff', { glow: 'rgba(255,255,255,.4)' });
+      if (lt > 1.1) bigText('it? 🤫', CX, 1060, 64, C.yellow, { lw: 10 });
+    }
+    ctx.restore();
+  }
+  // Yorùbá wherever you are + city chips
+  const b = win(t, 55.0, 60.5, .3, .25);
+  if (b > 0) {
+    ctx.save(); ctx.globalAlpha = b;
+    bigText('YORÙBÁ,', CX, 480, 110, C.yellow, { glow: 'rgba(242,194,48,.45)' });
+    bigText('WHEREVER YOU ARE', CX, 580, 64, '#fff', { lw: 10 });
+    const cities = [['🇳🇬', 'Lagos', Q.lagos], ['🇬🇧', 'London', Q.london], ['🇺🇸', 'Houston', Q.houston], ['🇧🇷', 'Bahia', Q.bahia]];
+    cities.forEach(([f, n, at], i) => { if (t < at - .05) return; const k = back((t - at + .05) / .4);
+      const x = CX + (i % 2 ? 215 : -215), y = 740 + Math.floor(i / 2) * 150;
+      ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.rotate((i % 2 ? 1 : -1) * .03);
+      rr(-190, -58, 380, 116, 58); ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.font = `58px ${SANS}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(f, -160, 4);
+      ctx.font = `900 50px ${SANS}`; ctx.fillStyle = C.deep; ctx.fillText(n, -75, 4); ctx.restore(); });
+    ctx.restore();
+  }
+  // SPEAK IT / WEAR IT / TEACH IT
+  const c = win(t, Q.speak - .1, Q.proud - .05, .15, .2);
+  if (c > 0) {
+    ctx.save(); ctx.globalAlpha = c;
+    [['🗣️ SPEAK IT', Q.speak, '#fff'], ['👑 WEAR IT', Q.wear, C.yellow], ['👶🏾 TEACH IT', Q.teach, '#7df0a0']].forEach(([txt, at, col], i) => {
+      if (t < at - .08) return; const k = t - at < .25 ? 1.35 - .35 * eo((t - at + .08) / .3) : 1;
+      ctx.save(); ctx.translate(CX, 600 + i * 170); ctx.scale(k, k); ctx.rotate((i - 1) * .025);
+      bigText(txt, 0, 0, 104, col, { glow: 'rgba(0,0,0,.5)' }); ctx.restore(); });
+    ctx.restore();
+  }
+  // BE PROUD OF WHO YOU ARE
+  const d = win(t, Q.proud - .08, Q.eje - .05, .12, .2);
+  if (d > 0) { ctx.save(); ctx.globalAlpha = d; const s = 1.2 - .2 * eo((t - Q.proud) / .35); ctx.translate(CX, 760); ctx.scale(s, s);
+    const g = ctx.createLinearGradient(0, -200, 0, 200); g.addColorStop(0, '#fff3c4'); g.addColorStop(.5, C.yellow); g.addColorStop(1, '#e08b12');
+    bigText('BE PROUD', 0, -130, 160, g, { glow: 'rgba(242,194,48,.5)' }); bigText('OF WHO', 0, 20, 120, '#fff'); bigText('YOU ARE', 0, 150, 140, g); ctx.restore(); }
+  // Ẹ jẹ́ ká gbé àṣà wa ga!
+  const e = win(t, Q.eje - .08, Q.ase - .05, .15, .15);
+  if (e > 0) { ctx.save(); ctx.globalAlpha = e; const s = back((t - Q.eje + .08) / .4); ctx.translate(CX, 760); ctx.scale(s, s);
+    bigText('Ẹ JẸ́ KÁ GBÉ', 0, -80, 104, '#fff'); bigText('ÀṢÀ WA GA!', 0, 40, 124, C.yellow, { glow: 'rgba(242,194,48,.5)' });
+    ctx.font = `700 40px ${SANS}`; ctx.textAlign = 'center'; ctx.fillStyle = '#e8f7e8'; ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.strokeText("Let's lift our culture high", 0, 150); ctx.fillText("Let's lift our culture high", 0, 150);
+    ctx.restore(); }
+  // ÀṢẸ mega stamp
+  const lt = t - Q.ase;
+  if (lt >= -.05 && t < 69.6) {
+    const out = clamp((69.6 - t) / .3), k = back((lt + .05) / .35);
+    ctx.save(); ctx.globalAlpha = out;
+    for (let i = 0; i < 3; i++) { const r = 150 + eo((lt - i * .08) / .9) * 520; ctx.globalAlpha = out * clamp(1 - (lt - i * .08) / 1.0); ctx.lineWidth = 8 - i * 2; ctx.strokeStyle = i % 2 ? '#fff' : C.yellow; ctx.beginPath(); ctx.arc(CX, 780, r, 0, 7); ctx.stroke(); }
+    ctx.globalAlpha = out;
+    for (let i = 0; i < 22; i++) { const ang = i * Math.PI * 2 / 22, dd = 170 + eo(lt / .8) * 330; ctx.beginPath(); ctx.arc(CX + Math.cos(ang) * dd, 780 + Math.sin(ang) * dd, 11 * clamp(1 - lt / 1.2) + 2, 0, 7); ctx.fillStyle = i % 2 ? C.leaf : C.yellow; ctx.fill(); }
+    ctx.translate(CX, 780); ctx.rotate(-.06); ctx.scale(k, k);
+    const g = ctx.createLinearGradient(0, -110, 0, 110); g.addColorStop(0, '#fff3c4'); g.addColorStop(.5, C.yellow); g.addColorStop(1, '#d9961a');
+    bigText('ÀṢẸ!', 0, 0, 250, g, { lw: 30, strokeColor: C.deep, glow: 'rgba(242,194,48,.6)' });
+    ctx.restore();
+  }
+}
+
+// ---------- end card ----------
+function endCard(t) {
+  const lt = t - 69.3; if (lt < 0) return;
+  ctx.save(); ctx.globalAlpha = eo(lt / .5);
+  if (LOGO) { const s = 280 * (.85 + .15 * back(lt / .6)), h = s * LOGO.height / LOGO.width;
+    ctx.beginPath(); ctx.arc(CX, 520, s * .62, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill(); ctx.drawImage(LOGO, CX - s / 2, 520 - h / 2, s, h); }
+  const k = back((lt - .3) / .45);
+  if (lt > .3) { ctx.save(); ctx.translate(CX, 830); ctx.scale(k, k); bigText('Yorùbá ni mí 💚', 0, 0, 104, C.yellow, { glow: 'rgba(242,194,48,.45)' }); ctx.restore(); }
+  const k2 = eo((lt - .8) / .4);
+  if (k2 > 0) { ctx.save(); ctx.globalAlpha = k2; ctx.translate(CX, 1000 + (1 - k2) * 20);
+    rr(-420, -50, 840, 100, 50); ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.font = `800 42px ${SANS}`; ctx.fillStyle = C.deep; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🔁 Tag a Yorùbá who needs to see this', 0, 3); ctx.restore(); }
+  const k3 = eo((lt - 1.2) / .4);
+  if (k3 > 0) { ctx.save(); ctx.globalAlpha = k3;
+    ctx.font = `700 40px ${SANS}`; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText('Follow ifa.ng  ·  Àṣà wa, ìyì wa', CX, 1150);
+    ctx.font = `500 30px ${SANS}`; ctx.fillStyle = '#cfd8cf'; ctx.fillText('our culture, our pride', CX, 1200);
+    let i = 0; for (let x = 300; x <= 780; x += 20, i++) { ctx.beginPath(); ctx.arc(x, 1270, 8, 0, 7); ctx.fillStyle = (Math.floor(i / 3) % 2) ? C.yellow : C.leaf; ctx.fill(); }
+    ctx.restore(); }
+  ctx.restore();
+}
+
+// ---------- captions (VO karaoke) ----------
+function captionsHidden(t) { return (t > 29.5 && t < 38.5) || (t > 48.9 && t < 54.8) || (t > Q.proud - .1 && t < 69.0) || t > 69.2; }
+function captions(t) {
+  if (captionsHidden(t)) return;
+  let li = -1; for (let i = LINES.length - 1; i >= 0; i--) if (t >= LINES[i][0] - .1) { li = i; break; }
+  if (li < 0) return;
+  const [st, en, txt, wts] = LINES[li];
+  if (t > en + .6) return;
+  const words = txt.split(' '), lt = t - st + .1, pop = back(lt / .22), fade = clamp((en + .6 - t) / .2);
+  let size = 64; ctx.font = `900 ${size}px ${SANS}`;
+  while (ctx.measureText(txt).width > 960 && size > 40) { size -= 2; ctx.font = `900 ${size}px ${SANS}`; }
+  const sp = ctx.measureText(' ').width * 1.25 + 8, tw = words.reduce((s, w) => s + ctx.measureText(w).width, 0) + sp * (words.length - 1);
+  let x = CX - tw / 2; const y = 1450;
+  ctx.save(); ctx.globalAlpha = fade; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.lineJoin = 'round';
+  words.forEach((w, i) => {
+    const ww = ctx.measureText(w).width, [a, b] = wts[i], active = t >= a - .05 && t < b + .05, said = t >= a - .05;
+    ctx.save(); const s = (.9 + .1 * pop) * (active ? 1.08 : 1); ctx.translate(x + ww / 2, y); ctx.scale(s, s); ctx.translate(-ww / 2, 0);
+    ctx.lineWidth = 11; ctx.strokeStyle = 'rgba(0,0,0,.9)'; ctx.strokeText(w, 0, 0);
+    ctx.fillStyle = active ? C.yellow : said ? '#fff' : 'rgba(255,255,255,.6)'; ctx.fillText(w, 0, 0); ctx.restore();
+    x += ww + sp;
+  });
+  ctx.restore();
+}
+
+// ---------- persistent subtle branding ----------
+function brand(t) {
+  if (!LOGO || t > 69.2) return;
+  const a = .9 * clamp((t - .2) / .5), lw = 120, lh = lw * LOGO.height / LOGO.width;
+  ctx.save(); ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(960, 240, 72, 0, 7); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill();
+  ctx.drawImage(LOGO, 960 - lw / 2, 240 - lh / 2, lw, lh); ctx.restore();
+}
+
+window.drawFrame = (t) => {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none'; ctx.shadowColor = 'transparent';
+  base(t);
+  dust(t, t < 29.4 || t > 38.6 ? .9 : .25);
+  hook(t); yemoja(t); mapPanel(t); quote(t); today(t); call(t);
+  captions(t); brand(t); endCard(t);
+};
+window.setFrame = (url) => new Promise(r => { const im = new Image(); im.onload = () => { FRAME = im; r(); }; im.src = url; });
+window.init = async (edit, logoURL) => {
+  E = edit; LINES = edit.lines; Q = edit.cues; TOT = edit.total;
+  await document.fonts.load(`900 80px "Inter Display"`); await document.fonts.load(`italic 700 40px "DejaVu Serif"`); await document.fonts.load(`40px "Noto Color Emoji"`);
+  LOGO = await new Promise(r => { const im = new Image(); im.onload = () => r(im); im.src = logoURL; });
+  return TOT;
+};
+</script></body></html>
