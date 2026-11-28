@@ -1,0 +1,202 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Concept B: "Voice Note": a chat between Ṣadé (London) and Mummy (Nigeria), with real ifa.ng screens as image messages.
+const W = 1080, H = 1920, CX = 540;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let E, Q, IMG = {}, TOT, MSGS = [];
+const C = { green: '#10352a', cream: '#f6f0e3', me: '#d6f08a', them: '#ffffff', ink: '#16211b', grey: '#7b867f', yellow: '#f2c230', coral: '#f3b29c', lav: '#bcc5f4', blue: '#3b6fd8' };
+const SANS = '"Inter Display", Inter, "Noto Color Emoji", sans-serif';
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const eo = x => 1 - Math.pow(1 - clamp(x), 3), eio = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const back = x => { x = clamp(x); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+function rr(x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function wrap(s, font, maxW) { ctx.font = font; const out = []; let cur = ''; for (const w of s.split(' ')) { const tryS = cur ? cur + ' ' + w : w; if (ctx.measureText(tryS).width > maxW && cur) { out.push(cur); cur = w; } else cur = tryS; } if (cur) out.push(cur); return out; }
+
+const F_TXT = `500 45px ${SANS}`, F_TR = `italic 400 36px ${SANS}`, BW = 820, PAD = 32, LH = 58, TRH = 47;
+const TOP = 260, BOTTOM = 1650;   // chat viewport
+
+// ---------- message script ----------
+function buildMessages() {
+  const vo = E.vo, d = E.vodur;
+  MSGS = [
+    { at: .5, me: true, type: 'text', text: 'Mummy 😩😩' },
+    { at: vo.B1 - .25, me: true, type: 'voice', id: 'B1' },
+    { at: 9.0, me: false, type: 'typing', until: 9.9 },
+    { at: 9.9, me: false, type: 'text', text: 'Ah, Ṣadé! Calm down 😂' },
+    { at: vo.B2 - .25, me: false, type: 'voice', id: 'B2' },
+    { at: 22.7, me: false, type: 'image', img: 'step1', crop: null, cap: "1️⃣ Tell them what's on your mind: your concern, language & budget" },
+    { at: 26.0, me: false, type: 'image', img: 'search_13', crop: [0, 380, 1179, 1700], cap: '2️⃣ Pick your Babaláwo or Ìyánífá. All verified, fees shown up front 👌🏾' },
+    { at: 29.4, me: false, type: 'image', img: 'meet', crop: null, cap: '3️⃣ Sign in with your phone, book & pay. Your Google Meet link comes straight to you 📲' },
+    { at: 32.9, me: false, type: 'image', img: 'notes', crop: null, cap: '4️⃣ After the reading you keep your notes: Odù, ẹbọ, everything. Approved by the Babaláwo ✅' },
+    { at: 36.6, me: true, type: 'text', text: '😳😳 WAIT' },
+    { at: vo.B3 - .25, me: true, type: 'voice', id: 'B3' },
+    { at: 45.2, me: true, type: 'link' },
+    { at: 46.3, me: true, type: 'text', text: 'Booked ✅🙏🏾' },
+    { at: vo.B4 - .25, me: false, type: 'voice', id: 'B4' },
+  ];
+  // reactions
+  MSGS[8].react = { at: 36.2, e: '😳' }; MSGS[12].react = { at: 50.0, e: '🙌🏾' };
+  for (const m of MSGS) m.h = measure(m);
+}
+function voiceLines(id) { return wrap(E.vowords[id].map(w => w[0]).join(' '), F_TR, BW - 2 * PAD); }
+function measure(m) {
+  if (m.type === 'text') return wrap(m.text, F_TXT, BW - 2 * PAD).length * LH + 2 * PAD - 8;
+  if (m.type === 'typing') return 100;
+  if (m.type === 'voice') return 120 + voiceLines(m.id).length * TRH + 20;
+  if (m.type === 'image') { const im = IMG[m.img]; const cw = m.crop ? m.crop[2] : im.width, ch = m.crop ? m.crop[3] : im.height; const iw = BW - 24; return 12 + Math.min(820, iw * ch / cw) + 16 + wrap(m.cap, F_TXT, BW - 2 * PAD).length * LH + PAD; }
+  if (m.type === 'link') return 360;
+  return 100;
+}
+
+// ---------- chat chrome ----------
+function chrome(t) {
+  // wallpaper
+  ctx.fillStyle = C.cream; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = .06; ctx.fillStyle = C.green;
+  for (let y = 300; y < H; y += 120) for (let x = 40 + ((y / 120) % 2) * 60; x < W; x += 120) { ctx.beginPath(); ctx.arc(x, y, 10, 0, 7); ctx.fill(); ctx.fillRect(x - 2, y + 18, 4, 16); }
+  ctx.restore();
+  // status bar
+  ctx.fillStyle = C.green; ctx.fillRect(0, 0, W, 250);
+  ctx.fillStyle = '#fff'; ctx.font = `700 38px ${SANS}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText('9:41', 70, 55);
+  ctx.textAlign = 'right'; ctx.fillText('London 🇬🇧  ▂▄▆  🔋', W - 60, 55);
+  // header
+  ctx.textAlign = 'left'; ctx.font = `600 60px ${SANS}`; ctx.fillText('‹', 40, 165);
+  const ag = ctx.createLinearGradient(120, 120, 220, 220); ag.addColorStop(0, C.yellow); ag.addColorStop(1, '#e08b12');
+  ctx.beginPath(); ctx.arc(170, 165, 50, 0, 7); ctx.fillStyle = ag; ctx.fill(); ctx.fillStyle = C.green; ctx.textAlign = 'center'; ctx.font = `800 46px ${SANS}`; ctx.fillText('M', 170, 168);
+  ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.font = `800 46px ${SANS}`; ctx.fillText('Mummy 🇳🇬', 245, 140);
+  const typing = MSGS.some(m => m.type === 'typing' && t > m.at && t < m.until) || MSGS.some(m => !m.me && m.type !== 'typing' && t > m.at - .9 && t < m.at);
+  const rec = MSGS.find(m => m.type === 'voice' && !m.me && t > m.at - 1.4 && t < m.at);
+  ctx.font = `500 32px ${SANS}`; ctx.fillStyle = '#bfe3cd'; ctx.fillText(rec ? 'recording audio…' : typing ? 'typing…' : 'online', 245, 192);
+  ctx.textAlign = 'right'; ctx.font = `40px ${SANS}`; ctx.fillStyle = '#fff'; ctx.fillText('📹   📞', W - 50, 165);
+  // input bar
+  ctx.fillStyle = 'rgba(246,240,227,.96)'; ctx.fillRect(0, BOTTOM + 20, W, H - BOTTOM - 20);
+  rr(40, BOTTOM + 50, 840, 100, 50); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#e3dccd'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.textAlign = 'left'; ctx.fillStyle = C.grey; ctx.font = `500 38px ${SANS}`; ctx.fillText('😊   Message', 80, BOTTOM + 100);
+  const recMe = MSGS.find(m => m.type === 'voice' && m.me && t > m.at - 1.3 && t < m.at);
+  ctx.beginPath(); ctx.arc(970, BOTTOM + 100, 56 * (recMe ? 1.15 + .08 * Math.sin(t * 14) : 1), 0, 7); ctx.fillStyle = recMe ? '#e2453b' : C.green; ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = `44px ${SANS}`; ctx.fillText('🎤', 970, BOTTOM + 103);
+}
+
+// ---------- bubbles ----------
+function bubbleBox(m, y) { const w = bubbleW(m); return { x: m.me ? W - 40 - w : 40, y, w, h: m.h }; }
+function bubbleW(m) {
+  if (m.type === 'text') { ctx.font = F_TXT; return Math.min(BW, Math.max(...wrap(m.text, F_TXT, BW - 2 * PAD).map(l => ctx.measureText(l).width)) + 2 * PAD + 90); }
+  if (m.type === 'typing') return 170;
+  return BW;
+}
+function drawBubble(m, b, t) {
+  const age = t - m.at, k = back(age / .35);
+  ctx.save(); ctx.translate(b.x + (m.me ? b.w : 0), b.y + b.h); ctx.scale(k, k); ctx.translate(-(b.x + (m.me ? b.w : 0)), -(b.y + b.h));
+  ctx.shadowColor = 'rgba(0,0,0,.10)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 4;
+  rr(b.x, b.y, b.w, b.h, 34); ctx.fillStyle = m.me ? C.me : C.them; ctx.fill(); ctx.shadowColor = 'transparent';
+  const tx = b.x + PAD; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = C.ink;
+  if (m.type === 'text') { wrap(m.text, F_TXT, BW - 2 * PAD).forEach((l, i) => { ctx.font = F_TXT; ctx.fillText(l, tx, b.y + PAD + 34 + i * LH); }); stamp(m, b); }
+  if (m.type === 'typing') { for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(b.x + 50 + i * 36, b.y + 50 + Math.sin(t * 10 - i) * 6, 11, 0, 7); ctx.fillStyle = '#9aa59e'; ctx.fill(); } }
+  if (m.type === 'voice') drawVoice(m, b, t);
+  if (m.type === 'image') drawImage(m, b, t);
+  if (m.type === 'link') drawLink(m, b);
+  if (m.react && t > m.react.at) { const rk = back((t - m.react.at) / .4); ctx.save(); ctx.translate(m.me ? b.x + 40 : b.x + b.w - 40, b.y + b.h + 6); ctx.scale(rk, rk);
+    rr(-44, -34, 88, 68, 34); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#eee'; ctx.lineWidth = 3; ctx.stroke(); ctx.font = `44px ${SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(m.react.e, 0, 2); ctx.restore(); }
+  ctx.restore();
+}
+function stamp(m, b) { ctx.font = `500 26px ${SANS}`; ctx.fillStyle = C.grey; ctx.textAlign = 'right'; ctx.fillText(m.me ? '✓✓' : '', b.x + b.w - 22, b.y + b.h - 18); }
+function drawVoice(m, b, t) {
+  const st = E.vo[m.id], dur = E.vodur[m.id], p = clamp((t - st) / dur), playing = t > st && t < st + dur;
+  // play button
+  ctx.beginPath(); ctx.arc(b.x + 80, b.y + 62, 40, 0, 7); ctx.fillStyle = m.me ? C.green : C.yellow; ctx.fill();
+  ctx.fillStyle = m.me ? '#fff' : C.green; ctx.beginPath(); if (playing) { ctx.fillRect(b.x + 66, b.y + 44, 10, 36); ctx.fillRect(b.x + 84, b.y + 44, 10, 36); } else { ctx.moveTo(b.x + 68, b.y + 42); ctx.lineTo(b.x + 98, b.y + 62); ctx.lineTo(b.x + 68, b.y + 82); ctx.fill(); }
+  // waveform
+  const r = (i) => .3 + .7 * Math.abs(Math.sin(i * 1.7 + m.id.charCodeAt(1)) * Math.cos(i * .53));
+  const n = 42, x0 = b.x + 150, ww = b.w - 300;
+  for (let i = 0; i < n; i++) { const hh = 14 + 56 * r(i) * (playing && i / n < p ? (.8 + .4 * Math.sin(t * 20 + i)) : 1); ctx.fillStyle = i / n < p ? (m.me ? C.green : '#c98d0c') : '#b9c2bc'; rr(x0 + i * ww / n, b.y + 62 - hh / 2, 8, hh, 4); ctx.fill(); }
+  // avatar dot + duration
+  ctx.font = `600 28px ${SANS}`; ctx.fillStyle = C.grey; ctx.textAlign = 'right'; const rem = playing ? dur * (1 - p) : dur; ctx.fillText(`0:${String(Math.ceil(rem)).padStart(2, '0')}`, b.x + b.w - 30, b.y + 72);
+  ctx.textAlign = 'left'; ctx.fillStyle = m.me ? '#4c6b3b' : '#8a7a4a'; ctx.font = `700 24px ${SANS}`; ctx.fillText(m.me ? 'Ṣadé · voice note' : 'Mummy · voice note', b.x + 150, b.y + 116);
+  // live transcript (words appear as they are spoken)
+  const words = E.vowords[m.id]; let shown = 0; for (const w of words) if (t >= w[1] - .05) shown++;
+  const lines = voiceLines(m.id); let wi = 0; ctx.font = F_TR;
+  lines.forEach((l, i) => { const lw = l.split(' '); let x = b.x + PAD;
+    for (const w of lw) { ctx.fillStyle = wi < shown ? C.ink : 'rgba(22,33,27,.18)'; if (wi === shown - 1 && playing) ctx.fillStyle = m.me ? '#2f6b1d' : '#a06a00'; ctx.fillText(w, x, b.y + 160 + i * TRH); x += ctx.measureText(w + ' ').width; wi++; } });
+}
+function drawImage(m, b, t) {
+  const im = IMG[m.img]; if (!im) return; const iw = b.w - 24, cr = m.crop || [0, 0, im.width, im.height], ih = Math.min(820, iw * cr[3] / cr[2]);
+  ctx.save(); rr(b.x + 12, b.y + 12, iw, ih, 26); ctx.clip(); ctx.fillStyle = '#f7f2e8'; ctx.fillRect(b.x + 12, b.y + 12, iw, ih);
+  const s = Math.min(iw / cr[2], ih / cr[3]), dw = cr[2] * s, dh = cr[3] * s; ctx.drawImage(im, cr[0], cr[1], cr[2], cr[3], b.x + 12 + (iw - dw) / 2, b.y + 12 + (ih - dh) / 2, dw, dh); ctx.restore();
+  ctx.font = F_TXT; ctx.fillStyle = C.ink; wrap(m.cap, F_TXT, BW - 2 * PAD).forEach((l, i) => ctx.fillText(l, b.x + PAD, b.y + 12 + ih + 16 + 38 + i * LH));
+}
+function drawLink(m, b) {
+  rr(b.x + 14, b.y + 14, b.w - 28, 220, 24); ctx.fillStyle = 'rgba(16,53,42,.92)'; ctx.fill();
+  if (IMG.logo) { const L = IMG.logo; ctx.beginPath(); ctx.arc(b.x + 120, b.y + 124, 76, 0, 7); ctx.fillStyle = '#f7f2e8'; ctx.fill(); ctx.drawImage(L, b.x + 60, b.y + 124 - 60 * L.height / L.width, 120, 120 * L.height / L.width); }
+  ctx.fillStyle = '#fff'; ctx.font = `800 36px ${SANS}`; ctx.fillText('IFA.ng', b.x + 225, b.y + 95);
+  ctx.font = `500 30px ${SANS}`; ctx.fillStyle = '#cfe3d6'; ctx.fillText('Consult a verified Babalawo', b.x + 225, b.y + 140); ctx.fillText('or Iyanifa online', b.x + 225, b.y + 180);
+  ctx.font = `600 38px ${SANS}`; ctx.fillStyle = '#1f5fbf'; ctx.fillText('ifa.ng', b.x + PAD, b.y + 300);
+}
+
+// ---------- layout + scroll ----------
+function chat(t) {
+  const vis = MSGS.filter(m => t >= m.at && !(m.type === 'typing' && t > m.until));
+  let total = 0; const ys = []; for (const m of vis) { ys.push(total); total += m.h + 34; }
+  // smooth scroll: bottom of the content eases to BOTTOM
+  let target = Math.max(0, total - (BOTTOM - TOP));
+  const last = vis[vis.length - 1]; let prevTotal = total - (last ? last.h + 34 : 0); const prevTarget = Math.max(0, prevTotal - (BOTTOM - TOP));
+  const k = last ? eio((t - last.at) / .45) : 1; const scroll = prevTarget + (target - prevTarget) * k;
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 250, W, BOTTOM + 20 - 250); ctx.clip();
+  vis.forEach((m, i) => { const y = TOP + ys[i] - scroll; if (y + m.h < 200 || y > BOTTOM + 40) return; drawBubble(m, bubbleBox(m, y), t); });
+  ctx.restore();
+}
+
+// ---------- lightbox: tap an image to view the real screen big ----------
+function lightbox(t) {
+  for (const m of MSGS) { if (m.type !== 'image') continue; const lt = t - (m.at + .7); if (lt < 0 || lt > 1.7) continue;
+    const k = eo(lt / .3) * clamp((1.7 - lt) / .3), im = IMG[m.img], cr = m.crop || [0, 0, im.width, im.height];
+    ctx.save(); ctx.globalAlpha = k * .85; ctx.fillStyle = '#05100b'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = k;
+    const mw = 960, mh = 1400, s = Math.min(mw / cr[2], mh / cr[3]) * (.9 + .1 * k), dw = cr[2] * s, dh = cr[3] * s;
+    ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 50; rr(CX - dw / 2, 960 - dh / 2, dw, dh, 30); ctx.save(); ctx.clip(); ctx.drawImage(im, cr[0], cr[1], cr[2], cr[3], CX - dw / 2, 960 - dh / 2, dw, dh); ctx.restore();
+    // tap ripple
+    const rp = lt / .5; if (rp < 1) { ctx.globalAlpha = k * (1 - rp); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(CX, 960, 60 + rp * 200, 0, 7); ctx.fill(); }
+    ctx.restore(); }
+}
+
+// ---------- hook sticker ----------
+function hook(t) {
+  if (t > 4.6) return; const k = back((t - .2) / .45) * clamp((4.6 - t) / .35);
+  ctx.save(); ctx.translate(CX, 1180); ctx.rotate(-.04); ctx.scale(k, k);
+  ctx.font = `900 58px ${SANS}`; const l1 = 'POV: you need a Babaláwo…', l2 = "but you're in London 😩"; const w = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) + 90;
+  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 30; rr(-w / 2, -110, w, 220, 40); ctx.fillStyle = '#111'; ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(l1, 0, -42); ctx.fillStyle = C.yellow; ctx.fillText(l2, 0, 42); ctx.restore();
+}
+
+// ---------- end card ----------
+const VARIANTS = { evergreen: ['Consult a verified Babaláwo', 'or Ìyánífá, from anywhere.', 'Book a consultation →'], prelaunch: ['Opening soon.', 'Be among the first to consult.', 'Join us at ifa.ng →'], postlaunch: ['Now live.', 'Your first consultation is a tap away.', 'Book now at ifa.ng →'] };
+function endCard(t) {
+  const lt = t - Q.end; if (lt < 0) return; const a = eo(lt / .5);
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#d6f08a'; ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = a * .12; ctx.fillStyle = C.green; for (let y = 80; y < H; y += 140) for (let x = 60 + ((y / 140) % 2) * 70; x < W; x += 140) { ctx.beginPath(); ctx.arc(x, y, 12, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = a;
+  // two bubbles
+  const b1 = back((lt - .1) / .45); ctx.save(); ctx.translate(380, 430); ctx.scale(b1, b1); rr(-300, -80, 600, 160, 50); ctx.fillStyle = '#fff'; ctx.fill(); ctx.font = `800 52px ${SANS}`; ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('Need a Babaláwo? 🤔', 0, 4); ctx.restore();
+  const b2 = back((lt - .45) / .45); if (lt > .45) { ctx.save(); ctx.translate(700, 620); ctx.scale(b2, b2); rr(-300, -80, 600, 160, 50); ctx.fillStyle = C.green; ctx.fill(); ctx.font = `800 52px ${SANS}`; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('Use IFA.ng 📲', 0, 4); ctx.restore(); }
+  if (IMG.logo) { const s = 260 * (.85 + .15 * back((lt - .6) / .5)), L = IMG.logo, h = s * L.height / L.width; ctx.beginPath(); ctx.arc(CX, 960, s * .66, 0, 7); ctx.fillStyle = '#fff'; ctx.fill(); ctx.drawImage(L, CX - s / 2, 960 - h / 2, s, h); }
+  const V = VARIANTS[E.variant] || VARIANTS.evergreen, k2 = eo((lt - .8) / .5); ctx.globalAlpha = a * k2; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  let fs = 64; ctx.font = `900 ${fs}px ${SANS}`; while (Math.max(ctx.measureText(V[0]).width, ctx.measureText(V[1]).width) > 940 && fs > 40) { fs -= 2; ctx.font = `900 ${fs}px ${SANS}`; }
+  ctx.fillStyle = C.green; ctx.fillText(V[0], CX, 1250); ctx.fillText(V[1], CX, 1250 + fs * 1.25);
+  if (lt > 1.1) { const k3 = back((lt - 1.1) / .5); ctx.save(); ctx.translate(CX, 1490); ctx.scale(k3, k3); ctx.font = `800 50px ${SANS}`; const w = ctx.measureText(V[2]).width + 110; rr(-w / 2, -58, w, 116, 58); ctx.fillStyle = C.green; ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillText(V[2], 0, 3); ctx.restore(); }
+  ctx.globalAlpha = a * eo((lt - 1.5) / .5); ctx.font = `700 42px ${SANS}`; ctx.fillStyle = C.green; ctx.fillText('ifa.ng  ·  @ifadotng', CX, 1640);
+  ctx.restore();
+}
+
+window.drawFrame = (t) => {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.shadowColor = 'transparent';
+  chrome(t); chat(t); lightbox(t); hook(t); endCard(t);
+};
+window.init = async (edit, logoURL, assets) => {
+  E = edit; Q = edit.cues; TOT = edit.total;
+  await document.fonts.load(`900 80px "Inter Display"`); await document.fonts.load(`italic 400 32px "Inter Display"`); await document.fonts.load(`40px "Noto Color Emoji"`);
+  const load = src => new Promise(r => { const im = new Image(); im.onload = () => r(im); im.onerror = () => r(null); im.src = src; });
+  for (const [k, u] of Object.entries(assets)) IMG[k] = await load(u);
+  buildMessages();
+  return TOT;
+};
+</script></body></html>

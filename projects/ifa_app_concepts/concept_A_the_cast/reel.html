@@ -1,0 +1,190 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Concept A: "The Cast": the app as the ọpọ́n Ifá; each step is one row of Èjì Ogbè drawn in gold.
+const W = 1080, H = 1920, CX = 540;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let E, Q, LINES, IMG = {}, TOT;
+const G = { bg: '#0a1812', bg2: '#10261c', gold: '#d8b15a', goldL: '#f3dc9a', goldD: '#8c6a2a', cream: '#efe6d0', wood: '#2e1d10', wood2: '#4a2f17', powder: '#e6d7b6' };
+const SANS = '"Inter Display", Inter, "Noto Color Emoji", sans-serif', SERIF = '"DejaVu Serif", Georgia, serif';
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const eo = x => 1 - Math.pow(1 - clamp(x), 3), eio = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const back = x => { x = clamp(x); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = .4, fo = .4) => clamp((t - a) / fi) * clamp((b - t) / fo);
+function rr(x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function rng(s) { return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function txt(s, x, y, size, col, o = {}) { ctx.save(); ctx.font = `${o.weight || 700} ${size}px ${o.font || SERIF}`; ctx.textAlign = o.align || 'center'; ctx.textBaseline = 'middle'; if (o.ls) ctx.letterSpacing = o.ls + 'px'; if (o.glow) { ctx.shadowColor = o.glow; ctx.shadowBlur = o.gb || size * .5; } ctx.fillStyle = col; ctx.fillText(s, x, y); ctx.restore(); }
+
+const BOARD = { x: CX, y: 1040, R: 440 };
+const PHONE = { w: 520, h: 1127, x: CX - 260, y: 640 };
+const SIGN = { y0: 205, dy: 82, xs: [470, 610] };
+const MARKS = () => [Q.m1, Q.m2, Q.m3, Q.m4];
+const ORD = ['Ìkíní', 'Ìkejì', 'Ìkẹta', 'Ìkẹrin'], LBL = ['Share', 'Choose', 'Meet', 'Keep'];
+
+// ---------- atmosphere ----------
+const PR = rng(4), DUST = Array.from({ length: 90 }, () => ({ x: PR() * W, y: PR() * H, r: .6 + PR() * 2.4, sp: 6 + PR() * 18, ph: PR() * 6.3 }));
+function background(t) {
+  const g = ctx.createRadialGradient(CX, 900, 80, CX, 960, 1300); g.addColorStop(0, G.bg2); g.addColorStop(1, '#040b08');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // a slow light sweep
+  const lx = CX + Math.sin(t * .25) * 300, lg = ctx.createRadialGradient(lx, 700, 0, lx, 700, 900);
+  lg.addColorStop(0, 'rgba(216,177,90,.10)'); lg.addColorStop(1, 'rgba(216,177,90,0)'); ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
+  for (const p of DUST) { const y = ((p.y - t * p.sp) % H + H) % H, x = p.x + Math.sin(t * .5 + p.ph) * 20;
+    ctx.beginPath(); ctx.arc(x, y, p.r, 0, 7); ctx.fillStyle = `rgba(243,220,154,${.15 + .25 * Math.sin(t + p.ph) ** 2})`; ctx.fill(); }
+}
+function grain(t) { const r = rng(Math.floor(t * 30) + 1); ctx.save(); ctx.globalAlpha = .05; for (let i = 0; i < 900; i++) { ctx.fillStyle = r() > .5 ? '#fff' : '#000'; ctx.fillRect(r() * W, r() * H, 2, 2); } ctx.restore(); }
+
+// ---------- the ọpọ́n Ifá board ----------
+function board(t, a, morph) {
+  if (a <= 0) return;
+  const { x, y, R } = BOARD;
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.rotate(Math.sin(t * .2) * .02);
+  // wood + carved rim
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 80;
+  const wg = ctx.createRadialGradient(-120, -160, 50, 0, 0, R); wg.addColorStop(0, G.wood2); wg.addColorStop(1, G.wood);
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fillStyle = wg; ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.lineWidth = 4; ctx.strokeStyle = G.gold; ctx.beginPath(); ctx.arc(0, 0, R - 12, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, R - 92, 0, 7); ctx.stroke();
+  for (let i = 0; i < 40; i++) { const ang = i * Math.PI * 2 / 40; if (Math.abs(((ang + Math.PI / 2 + 7 * Math.PI) % (2 * Math.PI)) - Math.PI) > Math.PI - .32) continue;
+    ctx.save(); ctx.rotate(ang); ctx.beginPath(); ctx.moveTo(0, -(R - 18)); ctx.lineTo(-16, -(R - 86)); ctx.lineTo(16, -(R - 86)); ctx.closePath(); ctx.fillStyle = i % 2 ? 'rgba(216,177,90,.85)' : 'rgba(140,106,42,.85)'; ctx.fill(); ctx.restore(); }
+  // Èṣù face at the head of the tray
+  ctx.save(); ctx.translate(0, -(R - 50)); ctx.beginPath(); ctx.ellipse(0, 0, 40, 50, 0, 0, 7); ctx.fillStyle = G.gold; ctx.fill();
+  ctx.fillStyle = G.wood; ctx.beginPath(); ctx.ellipse(-14, -8, 8, 4.5, 0, 0, 7); ctx.ellipse(14, -8, 8, 4.5, 0, 0, 7); ctx.fill(); ctx.fillRect(-3, -2, 6, 18); ctx.fillRect(-12, 24, 24, 5); ctx.restore();
+  // powder surface (fades as it becomes a screen)
+  const pr = R - 96; ctx.globalAlpha = a * (1 - morph);
+  const pg = ctx.createRadialGradient(0, 0, 10, 0, 0, pr); pg.addColorStop(0, '#f3e8cf'); pg.addColorStop(1, G.powder);
+  ctx.beginPath(); ctx.arc(0, 0, pr, 0, 7); ctx.fillStyle = pg; ctx.fill();
+  const r = rng(2); ctx.fillStyle = 'rgba(140,106,42,.25)'; for (let i = 0; i < 300; i++) { const an = r() * 7, d = Math.sqrt(r()) * pr; ctx.fillRect(Math.cos(an) * d, Math.sin(an) * d, 2, 2); }
+  // fingers trace the first marks in the powder while the narrator speaks
+  const tr = eo((t - 2.6) / 2.2);
+  ctx.strokeStyle = 'rgba(90,62,24,.75)'; ctx.lineWidth = 12; ctx.lineCap = 'round';
+  for (let k = 0; k < 4; k++) for (const s of [-1, 1]) { const p = clamp(tr * 4 - k); if (p <= 0) continue; ctx.beginPath(); ctx.moveTo(s * 50, -120 + k * 80); ctx.lineTo(s * 50, -120 + k * 80 + 40 * p); ctx.stroke(); }
+  ctx.restore();
+}
+
+// ---------- the gold phone (screen = real ifa.ng captures) ----------
+function screen(t, SW, SH) {
+  ctx.fillStyle = '#f7f2e8'; ctx.fillRect(0, 0, SW, SH);
+  const draw = (k, y = 0) => { const im = IMG[k]; if (im) ctx.drawImage(im, 0, -y); };
+  const [m1, m2, m3, m4] = MARKS();
+  // start below the homepage hero (no hero imagery): the 'Meet the Babalawos and Iyanifas' section
+  if (t < m1 + .4) { draw('home_top', 2560); return; }
+  if (t < m2 + .4) { const p = eio((t - m1 - .5) / 1.6); draw('home_top', 2560 + p * (8370 - 2560)); return; }
+  if (t < m3 + .4) { let k = 'search_00'; const ty = clamp((t - Q.choose) / 2.0); if (t > Q.choose) k = 'search_' + String(Math.min(13, Math.floor(ty * 13) + 1)).padStart(2, '0'); if (t > Q.verified - .9) k = 'filters_open'; draw(k); return; }
+  if (t < Q.meet - .1) { let k = 'auth_00'; const ty = clamp((t - m3 - .9) / 1.4); if (t > m3 + .9) k = 'auth_' + String(Math.min(10, Math.floor(ty * 10) + 1)).padStart(2, '0'); draw(k); return; }
+  if (t < m4 + .4) { ctx.fillStyle = '#101418'; ctx.fillRect(0, 0, SW, SH); const im = IMG.meet; ctx.drawImage(im, 0, 800, SW, im.height * SW / im.width); return; }
+  const im = IMG.notes, w = 1120, s = w / im.width, ox = (SW - w) / 2, oy = 700;
+  ctx.drawImage(im, ox, oy, w, im.height * s);
+  const row = (y0, h, at) => { const k = eo((t - at) / .4); if (k > 0) { ctx.save(); ctx.globalAlpha = .38 * k; ctx.fillStyle = G.gold; rr(ox + 20, oy + y0 * s, (w - 40) * k, h * s, 18); ctx.fill(); ctx.restore(); } };
+  row(255, 70, Q.odu); row(418, 118, Q.ebo); row(640, 90, Q.path);
+}
+function phone(t) {
+  const [m1] = MARKS();
+  // morph from the board's round window (r=344 at board centre) to the phone rectangle
+  const mp = eio((t - (Q.window + 1.2)) / 1.4);
+  const out = eio((t - (Q.complete - .2)) / .9);
+  if (t < Q.window - .2 || out >= 1) return;
+  const cr = BOARD.R - 96, bx = BOARD.x - cr, by = BOARD.y - cr;
+  let x = bx + (PHONE.x - bx) * mp, y = by + (PHONE.y - by) * mp, w = 2 * cr + (PHONE.w - 2 * cr) * mp, h = 2 * cr + (PHONE.h - 2 * cr) * mp, r = cr + (64 - cr) * mp;
+  const reveal = eo((t - Q.window) / .9);
+  ctx.save(); ctx.globalAlpha = reveal * (1 - out);
+  const s = 1 - .25 * out; ctx.translate(CX, y + h / 2 + out * 200); ctx.scale(s, s); ctx.translate(-CX, -(y + h / 2));
+  ctx.shadowColor = 'rgba(216,177,90,.35)'; ctx.shadowBlur = 60; rr(x - 10, y - 10, w + 20, h + 20, r + 10); ctx.fillStyle = '#0d0d0d'; ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.lineWidth = 4; ctx.strokeStyle = G.gold; rr(x - 10, y - 10, w + 20, h + 20, r + 10); ctx.stroke();
+  ctx.save(); rr(x, y, w, h, r); ctx.clip();
+  // screen is 1179 wide; fit to w, anchored at the top, keeping the circle view centred on the hero
+  const sc = w / 1179; ctx.translate(x, y - (1 - mp) * 140); ctx.scale(sc, sc); screen(t, 1179, 2556);
+  ctx.restore();
+  // gold light sweep across the glass on each mark
+  for (const at of MARKS()) { const lt = t - at; if (lt < 0 || lt > 1) continue; ctx.save(); rr(x, y, w, h, r); ctx.clip(); const gx = x - 300 + lt * (w + 600);
+    const gg = ctx.createLinearGradient(gx - 140, 0, gx + 140, 0); gg.addColorStop(0, 'rgba(243,220,154,0)'); gg.addColorStop(.5, 'rgba(243,220,154,.45)'); gg.addColorStop(1, 'rgba(243,220,154,0)'); ctx.fillStyle = gg; ctx.fillRect(x, y, w, h); ctx.restore(); }
+  ctx.restore();
+}
+
+// ---------- the Odù sign: Èjì Ogbè, one row per step ----------
+function stroke(x, y, p, glow) {
+  ctx.save(); ctx.lineCap = 'round'; ctx.lineWidth = 16; ctx.strokeStyle = G.goldL; ctx.shadowColor = 'rgba(243,220,154,.9)'; ctx.shadowBlur = 18 + 30 * glow;
+  ctx.beginPath(); ctx.moveTo(x, y - 24); ctx.lineTo(x, y - 24 + 48 * p); ctx.stroke(); ctx.restore();
+}
+function sign(t, cx, cy, sc, a, labels) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(cx, cy); ctx.scale(sc, sc);
+  MARKS().forEach((at, i) => {
+    const y = i * SIGN.dy, p = eo((t - at - .1) / .55); if (p <= 0) { // ghost slot
+      ctx.fillStyle = 'rgba(216,177,90,.18)'; for (const x of SIGN.xs) { ctx.beginPath(); ctx.arc(x - CX, y, 5, 0, 7); ctx.fill(); } return; }
+    const glow = clamp(1 - (t - at) / 1.2);
+    for (const x of SIGN.xs) stroke(x - CX, y, p, glow);
+    if (labels) { ctx.save(); ctx.globalAlpha = a * eo((t - at - .3) / .5);
+      ctx.font = `italic 600 30px ${SERIF}`; ctx.fillStyle = G.gold; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(ORD[i], -150, y);
+      ctx.font = `600 30px ${SANS}`; ctx.fillStyle = G.cream; ctx.textAlign = 'left'; ctx.fillText(LBL[i], 150, y); ctx.restore(); }
+  });
+  ctx.restore();
+}
+
+// ---------- the reveal: cast complete ----------
+function finale(t) {
+  const a = win(t, Q.complete - .1, Q.end + .3, .6, .4); if (a <= 0) return;
+  // the real Èjì Ogbè card from the ifa.ng Odù library
+  const k = eo((t - Q.complete - .8) / .8), im = IMG.odu1;
+  if (im && k > 0) { const w = 860, h = im.height * w / im.width; ctx.save(); ctx.globalAlpha = a * k; ctx.translate(CX, 1060 + (1 - k) * 60);
+    ctx.shadowColor = 'rgba(243,220,154,.5)'; ctx.shadowBlur = 50; rr(-w / 2 - 8, -h / 2 - 8, w + 16, h + 16, 40); ctx.fillStyle = G.gold; ctx.fill(); ctx.shadowColor = 'transparent';
+    ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore(); }
+  txt('ÈJÌ OGBÈ', CX, 1290, 46, G.goldL, { weight: 700, ls: 10 });
+  const hk = eo((t - Q.hear + .1) / .7);
+  if (hk > 0) { ctx.save(); ctx.globalAlpha = a * hk; txt('Hear Ifá', CX, 1470, 118, G.cream, { glow: 'rgba(0,0,0,.6)' }); txt('speak.', CX, 1600, 118, G.goldL, { weight: 'italic 700', glow: 'rgba(243,220,154,.45)' }); ctx.restore(); }
+  const bk = back((t - Q.brand) / .5);
+  if (t > Q.brand && IMG.logo) { ctx.save(); ctx.translate(CX, 1760); ctx.scale(bk, bk); ctx.beginPath(); ctx.arc(0, 0, 80, 0, 7); ctx.fillStyle = G.cream; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = G.gold; ctx.stroke(); const L = IMG.logo, lw = 124; ctx.drawImage(L, -lw / 2, -lw * L.height / L.width / 2, lw, lw * L.height / L.width); ctx.restore(); }
+}
+
+// ---------- serif captions ----------
+function captions(t) {
+  if (t > Q.complete + 2.6) return;
+  let li = -1; for (let i = LINES.length - 1; i >= 0; i--) if (t >= LINES[i][0] - .15) { li = i; break; }
+  if (li < 0) return; const [st, en, s, wts] = LINES[li]; if (t > en + .6) return;
+  const a = clamp((t - st + .15) / .35) * clamp((en + .6 - t) / .3);
+  const y = t < Q.window + 1.8 ? 420 : (t > Q.complete - .2 ? 560 : 575);
+  ctx.save(); ctx.globalAlpha = a; ctx.font = `italic 600 50px ${SERIF}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const words = s.split(' '), sp = ctx.measureText(' ').width, tw = words.reduce((acc, w) => acc + ctx.measureText(w).width, 0) + sp * (words.length - 1);
+  let x = CX - tw / 2;
+  words.forEach((w, i) => { const ww = ctx.measureText(w).width, said = t >= wts[i][0] - .08; ctx.fillStyle = said ? G.cream : 'rgba(239,230,208,.35)'; if (said && t < wts[i][1] + .1) { ctx.shadowColor = 'rgba(243,220,154,.8)'; ctx.shadowBlur = 20; ctx.fillStyle = G.goldL; } else ctx.shadowColor = 'transparent'; ctx.fillText(w, x, y); x += ww + sp; });
+  ctx.restore();
+}
+
+// ---------- end card ----------
+const VARIANTS = { evergreen: ['Consult a verified Babaláwo or Ìyánífá,', 'from anywhere.', 'Book a consultation →'], prelaunch: ['Opening soon.', 'Be among the first to consult.', 'Join us at ifa.ng →'], postlaunch: ['Now live.', 'Your first consultation is a tap away.', 'Book now at ifa.ng →'] };
+function endCard(t) {
+  const lt = t - Q.end; if (lt < 0) return; const a = eo(lt / .6);
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#071410'; ctx.fillRect(0, 0, W, H);
+  // gold frame
+  ctx.lineWidth = 3; ctx.strokeStyle = G.gold; rr(60, 120, W - 120, H - 240, 30); ctx.stroke(); rr(76, 136, W - 152, H - 272, 24); ctx.strokeStyle = 'rgba(216,177,90,.35)'; ctx.stroke();
+  sign(t + 100, CX, 330, .9, 1, false);   // the completed sign as an emblem
+  if (IMG.logo) { const s = 230, L = IMG.logo, h = s * L.height / L.width; ctx.beginPath(); ctx.arc(CX, 820, s * .66, 0, 7); ctx.fillStyle = G.cream; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = G.gold; ctx.stroke(); ctx.drawImage(L, CX - s / 2, 820 - h / 2, s, h); }
+  const k = eo((lt - .3) / .6); ctx.globalAlpha = a * k;
+  txt('Hear Ifá', CX, 1110, 110, G.cream); txt('speak.', CX, 1230, 110, G.goldL, { weight: 'italic 700' });
+  const V = VARIANTS[E.variant] || VARIANTS.evergreen; const k2 = eo((lt - .7) / .5); ctx.globalAlpha = a * k2;
+  txt(V[0], CX, 1370, 42, '#d9d2bf', { font: SANS, weight: 500 }); txt(V[1], CX, 1426, 42, '#d9d2bf', { font: SANS, weight: 500 });
+  if (lt > 1.0) { const k3 = back((lt - 1.0) / .5); ctx.save(); ctx.translate(CX, 1560); ctx.scale(k3, k3); ctx.font = `800 46px ${SANS}`; const w = ctx.measureText(V[2]).width + 100;
+    rr(-w / 2, -54, w, 108, 54); ctx.fillStyle = G.gold; ctx.fill(); txt(V[2], 0, 3, 46, '#0a1812', { font: SANS, weight: 800 }); ctx.restore(); }
+  ctx.globalAlpha = a * eo((lt - 1.4) / .5); txt('ifa.ng  ·  @ifadotng', CX, 1700, 40, G.goldL, { font: SANS, weight: 700 });
+  ctx.restore();
+}
+
+window.drawFrame = (t) => {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.shadowColor = 'transparent';
+  background(t);
+  const boardA = clamp(t / 1.2) * (1 - eio((t - (Q.window + 1.0)) / 1.2));
+  board(t, boardA, eo((t - Q.window) / .9));
+  phone(t);
+  // sign: building above the phone, then centred and enlarged for the finale
+  const fin = eio((t - Q.complete) / 1.0);
+  sign(t, CX, SIGN.y0 + fin * 200, 1 + fin * .5, clamp((t - Q.m1 + .6) / .5) * clamp((Q.end + .2 - t) / .4), fin < .5);
+  finale(t); captions(t); grain(t); endCard(t);
+};
+window.init = async (edit, logoURL, assets) => {
+  E = edit; Q = edit.cues; Object.assign(Q, { m1: Q.m1, m2: Q.m2, m3: Q.m3, m4: Q.m4 }); LINES = edit.lines; TOT = edit.total;
+  await document.fonts.load(`900 80px "Inter Display"`); await document.fonts.load(`italic 600 40px "DejaVu Serif"`); await document.fonts.load(`700 40px "DejaVu Serif"`);
+  const load = src => new Promise(r => { const im = new Image(); im.onload = () => r(im); im.onerror = () => r(null); im.src = src; });
+  for (const [k, u] of Object.entries(assets)) IMG[k] = await load(u);
+  return TOT;
+};
+</script></body></html>
