@@ -129,7 +129,7 @@ place(fx, ding(783.99, 2.2), Q['end'] + .1, .2)
 # ---------------- real chant from the ifa.ng hero video ----------------
 chant = dec(chant_p)
 ch = np.zeros(N, np.float32)
-seg = chant[int(6.0 * SR):int((6.0 + (T - Q['cta'] + .5)) * SR)]
+seg = chant[int(16.4 * SR):int((16.4 + (T - Q['cta'] + .5)) * SR)]   # pause, then the clean verse+chorus (17.8-31.5 s): no speech
 place(ch, seg, Q['cta'] - .1)
 seg2 = chant[int(1.0 * SR):int((1.0 + (Q['s1'] - Q['reveal'] + .5)) * SR)]   # faint under the in-phone hero
 place(ch, seg2 * .35, Q['reveal'])

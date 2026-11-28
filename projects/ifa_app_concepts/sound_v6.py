@@ -64,10 +64,15 @@ Q = E['cues']
 if which == 'A':
     # hushed, reverberant chant bed for the whole piece; it comes forward for the finale
     seg = chant[:N].copy() if len(chant) >= N else np.pad(chant, (0, N - len(chant)))
-    seg = reverb(lp(seg, .12) * 1.6, 3.0, .6)
-    place(bed, seg, 0)
-    lvl = .35 + .65 * np.clip((t - Q['complete'] + .5) / 1.5, 0, 1)
-    bed *= lvl * np.clip(t / 2.0, 0, 1) * np.clip((T - t) / 2.5, 0, 1)
+    hush = reverb(lp(seg, .12) * 1.6, 3.0, .6)
+    hush *= .35 * np.clip(t / 2.0, 0, 1)
+    # finale: clean, uninterrupted verse + full chorus (chant 17.8-31.5 s), lightly reverbed, faded in on "The cast is complete"
+    t0 = Q['complete'] - .5
+    clean = chant[int(17.8 * SR):int(31.5 * SR)].copy(); clean = reverb(clean, 2.2, .25)
+    cl = np.zeros(N, np.float32); place(cl, clean, t0)
+    xf = np.clip((t - t0) / 1.2, 0, 1)
+    bed = hush * (1 - xf) + cl * xf
+    bed *= np.clip((T - t) / 2.5, 0, 1)
     place(fx, boom(2.4, 40), .2, .6)                       # the board rises from darkness
     place(fx, whoosh(1.2, .15), Q['window'] - .3, .35); place(fx, shimmer(2.2), Q['window'] + .1, .25)
     for i, k in enumerate(['m1', 'm2', 'm3', 'm4']):
@@ -77,8 +82,15 @@ if which == 'A':
     mix = vo * 1.05 + bed * .55 * (1 - .4 * talk) + fx * .5
 else:
     # chant as a light background vibe, swelling on the end card
-    seg = chant[int(2 * SR):int(2 * SR) + N]; seg = np.pad(seg, (0, max(0, N - len(seg))))
-    place(bed, lp(seg, .25), 0)
+    pieces = [(0.3, 15.5), (17.8, 31.5), (31.8, 43.5), (0.3, 9.8)]
+    xfd = int(.4 * SR); pos = 0.0
+    for a0, a1 in pieces:
+        p_ = chant[int(a0 * SR):int(a1 * SR)].copy(); f = np.ones(len(p_), np.float32); f[:xfd] = np.linspace(0, 1, xfd); f[-xfd:] *= np.linspace(1, 0, xfd)
+        place(bed, lp(p_, .25) * f, pos); pos += (a1 - a0) - .4
+    endc = chant[int(24.4 * SR):int(31.4 * SR)].copy(); f = np.ones(len(endc), np.float32); f[:xfd] = np.linspace(0, 1, xfd); f[-int(1.2 * SR):] *= np.linspace(1, 0, int(1.2 * SR))
+    tend = Q['end'] - .5
+    keep = np.clip((tend + .4 - t) / .4, 0, 1); bed *= keep          # hand over to the clean chorus for the end card
+    place(bed, endc * f, tend)
     bed *= (.6 + .4 * np.clip((t - Q['end'] + .3) / 1.2, 0, 1)) * np.clip(t / 1.5, 0, 1) * np.clip((T - t) / 2.0, 0, 1)
     # message sounds
     sends = [.5, E['vo']['B1'] - .25, 36.6, E['vo']['B3'] - .25, 45.2, 46.3]
